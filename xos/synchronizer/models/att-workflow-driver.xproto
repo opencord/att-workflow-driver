@@ -1,0 +1,28 @@
+option name = "att-workflow-driver";
+option app_label = "att-workflow-driver";
+
+message AttWorkflowDriverService (Service){
+    option verbose_name = "AttWorkflowDriver Service";
+    option kind = "OSS";
+
+    required bool create_on_discovery = 2 [help_text = "Whether to create the subscriber when an ONU is discovered", null = False, db_index = False, blank = False, default = True];
+}
+
+message AttWorkflowDriverServiceInstance (ServiceInstance){
+    option owner_class_name = "AttWorkflowDriverService";
+    option verbose_name = "AttWorkflowDriver Service Instance";
+
+    required string valid = 1 [default = "awaiting", choices = "(('awaiting', 'Awaiting Validation'), ('valid', 'Valid'), ('invalid', 'Invalid'))", help_text = "Wether this ONU has been validated by the external OSS", null = False, blank = False];
+    required string serial_number = 2 [max_length = 254, null = False, db_index = False, blank = False, tosca_key=True, unique = True];
+    required string authentication_state = 3 [default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('STARTED', 'Started'), ('REQUESTED', 'Requested'), ('APPROVED', 'Approved'), ('DENIED', 'Denied'), )", max_length = 50, null = False, db_index = False, blank = False];
+    required string of_dpid = 4 [max_length = 254, null = False, db_index = False, blank = False];
+    optional int32 c_tag = 5 [null = True, db_index = False, blank = False, unique = True, feedback_state = True];
+}
+
+message AttWorkflowDriverWhiteListEntry (XOSBase) {
+    option verbose_name = "Whitelist";
+    option plural = "attworkflowdriverwhitelistentries";
+
+    required manytoone owner->AttWorkflowDriverService:whitelist_entries = 1 [db_index = True, null = False, blank = False, tosca_key=True];
+    required string serial_number = 2 [max_length = 254, null = False, db_index = False, blank = False, tosca_key=True, unique_with = "owner"];
+}
