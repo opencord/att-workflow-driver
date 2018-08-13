@@ -20,11 +20,12 @@ import os, sys
 
 # Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-service_dir=os.path.join(test_path, "../../../..")
 xos_dir=os.path.join(test_path, "../../..")
 if not os.path.exists(os.path.join(test_path, "new_base")):
     xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
+    services_dir = os.path.join(xos_dir, "../../xos_services")
+sys.path.append(xos_dir)
+sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 # END Hack to load synchronizer framework
 
 # generate model from xproto
@@ -39,7 +40,7 @@ def get_models_fn(service_name, xproto_name):
     raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 # END generate model from xproto
 
-class TestSubscriberAuthEvent(unittest.TestCase):
+class TestSyncOLTDevice(unittest.TestCase):
 
     def setUp(self):
 
@@ -52,65 +53,53 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         config = os.path.join(test_path, "../test_config.yaml")
         Config.clear()
         Config.init(config, "synchronizer-config-schema.yaml")
-        from multistructlog import create_logger
-        log = create_logger(Config().get('logging'))
         # END Setting up the config module
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
         # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
 
+        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
+        # and apparently it is not overriding the generated model accessor
         build_mock_modelaccessor(xos_dir, services_dir, [
             get_models_fn("att-workflow-driver", "att-workflow-driver.xproto"),
             get_models_fn("olt-service", "volt.xproto"),
             get_models_fn("../profiles/rcord", "rcord.xproto")
         ])
         import synchronizers.new_base.modelaccessor
-        from dhcp_event import SubscriberDhcpEventStep, model_accessor
+        from onu_event import ONUEventStep, model_accessor
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-        self.log = log
+        self.log = Mock()
 
-        self.event_step = SubscriberDhcpEventStep(self.log)
+        self.event_step = ONUEventStep(self.log)
 
         self.event = Mock()
-
-        self.volt = Mock()
-        self.volt.name = "vOLT"
-        self.volt.leaf_model = Mock()
-
-        self.subscriber = RCORDSubscriber()
-        self.subscriber.onu_device = "BRCM1234"
-        self.subscriber.save = Mock()
-
-        self.mac_address = "00:AA:00:00:00:01"
-        self.ip_address = "192.168.3.5"
-
+        self.event_dict = {
+            'status': 'activated',
+            'serial_number': 'BRCM1234',
+            'of_dpid': 'of:109299321'
+        }
+        self.event.value = json.dumps(self.event_dict)
 
     def tearDown(self):
         sys.path = self.sys_path_save
 
-    def test_dhcp_subscriber(self):
 
-        self.event.value = json.dumps({
-            "deviceId" : "of:0000000000000001",
-            "portNumber" : "1",
-            "macAddress" : self.mac_address,
-            "ipAddress" : self.ip_address
-        })
+    def test_create_instance(self):
 
-        with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-            patch.object(RCORDSubscriber.objects, "get_items") as subscriber_mock, \
-            patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
+            patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
-            volt_service_mock.return_value = [self.volt]
-            get_onu_sn.return_value = "BRCM1234"
-            subscriber_mock.return_value = [self.subscriber]
+            att_si_mock.side_effect = IndexError
 
             self.event_step.process_event(self.event)
 
-            self.subscriber.save.assert_called()
-            self.assertEqual(self.subscriber.mac_address, self.mac_address)
-            self.assertEqual(self.subscriber.ip_address, self.ip_address)
+            att_si = mock_save.call_args[0][0]
+
+            self.assertEqual(mock_save.call_count, 1)
+
+            self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
+            self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
