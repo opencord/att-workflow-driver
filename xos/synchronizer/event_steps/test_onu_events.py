@@ -80,7 +80,8 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.event_dict = {
             'status': 'activated',
             'serial_number': 'BRCM1234',
-            'of_dpid': 'of:109299321'
+            'of_dpid': 'of:109299321',
+            'uni_port_id': 16
         }
         self.event.value = json.dumps(self.event_dict)
 
@@ -103,3 +104,4 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
             self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
+            self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])

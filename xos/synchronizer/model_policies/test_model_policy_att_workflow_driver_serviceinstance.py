@@ -221,64 +221,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
             onu_save.assert_not_called()
 
-    def test_create_subscriber_with_ctag(self):
-        self.si.valid = "valid"
-        self.si.serial_number = "BRCM1234"
-        self.si.c_tag = 111
-        self.si.backend_code = 1
-
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="ENABLED"
-        )
-
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber, "save", autospec=True) as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
-
-            onu_objects.return_value = [onu]
-
-            self.policy.handle_update(self.si)
-            self.assertEqual(subscriber_save.call_count, 1)
-
-            subscriber = subscriber_save.call_args[0][0]
-            self.assertEqual(subscriber.onu_device, self.si.serial_number)
-            self.assertEqual(subscriber.c_tag, self.si.c_tag)
-
-            onu_save.assert_not_called()
-
-    def _test_add_c_tag_to_pre_provisioned_subscriber(self):
-        self.si.valid = "valid"
-        self.si.serial_number = "BRCM1234"
-        self.si.c_tag = 111
-        self.si.backend_code = 1
-
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="ENABLED"
-        )
-
-        subscriber = RCORDSubscriber(
-            onu_device=self.si.serial_number,
-        )
-
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
-                patch.object(RCORDSubscriber, "save", autospec=True) as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
-
-            onu_objects.return_value = [onu]
-            subscriber_objects.return_value = [subscriber]
-
-            self.policy.handle_update(self.si)
-            self.assertEqual(subscriber_save.call_count, 1)
-
-            subscriber = subscriber_save.call_args[0][0]
-            self.assertEqual(subscriber.onu_device, self.si.serial_number)
-            self.assertEqual(subscriber.c_tag, self.si.c_tag)
-
-            onu_save.assert_not_called()
-
 if __name__ == '__main__':
     unittest.main()
 
