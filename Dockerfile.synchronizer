@@ -20,8 +20,6 @@ FROM xosproject/xos-synchronizer-base:master
 
 COPY xos/synchronizer /opt/xos/synchronizers/att-workflow-driver
 COPY VERSION /opt/xos/synchronizers/att-workflow-driver/
-COPY samples/auth_event_sample.py /opt/xos/synchronizers/att-workflow-driver/
-COPY samples/auth_event_sample_fail.py /opt/xos/synchronizers/att-workflow-driver/
 
 WORKDIR "/opt/xos/synchronizers/att-workflow-driver"
 
