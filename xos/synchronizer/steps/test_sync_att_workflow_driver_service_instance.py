@@ -76,7 +76,7 @@ class TestSyncAttWorkflowDriverServiceInstance(unittest.TestCase):
 
         self.sync_step = SyncAttWorkflowDriverServiceInstance
 
-        self.oss = Mock()
+        self.oss = AttWorkflowDriverService()
         self.oss.name = "oss"
         self.oss.id = 5367
 
@@ -84,30 +84,62 @@ class TestSyncAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.o = Mock()
         self.o.serial_number = "BRCM1234"
         self.o.of_dpid = "of:109299321"
+        self.o.pon_port_id = 1
         self.o.owner.leaf_model = self.oss
         self.o.tologdict.return_value = {}
+
+        self.pon_port = PONPort(
+            port_no=1
+        )
+        self.onu = ONUDevice(
+            serial_number=self.o.serial_number,
+            pon_port=self.pon_port
+        )
 
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
 
     def test_sync_valid(self):
-        with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_items:
+        with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_items, \
+            patch.object(ONUDevice.objects, "get_items") as onu_items:
             # Create a whitelist entry for self.o's serial number
-            whitelist_entry = AttWorkflowDriverWhiteListEntry(owner_id=self.oss.id, serial_number=self.o.serial_number)
+            whitelist_entry = AttWorkflowDriverWhiteListEntry(
+                owner_id=self.oss.id,
+                serial_number=self.o.serial_number,
+                device_id=self.o.of_dpid,
+                pon_port_id=1,
+            )
             whitelist_items.return_value = [whitelist_entry]
+            onu_items.return_value = [self.onu]
 
             self.sync_step().sync_record(self.o)
 
             self.assertEqual(self.o.valid, "valid")
-            self.assertTrue(self.o.no_sync)
             self.o.save.assert_called()
 
-    def test_sync_rejected(self):
+    def test_sync_bad_location(self):
+        with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_items, \
+            patch.object(ONUDevice.objects, "get_items") as onu_items:
+            # Create a whitelist entry for self.o's serial number
+            whitelist_entry = AttWorkflowDriverWhiteListEntry(
+                owner_id=self.oss.id,
+                serial_number=self.o.serial_number,
+                device_id="foo",
+                pon_port_id=666
+            )
+            whitelist_items.return_value = [whitelist_entry]
+            onu_items.return_value = [self.onu]
+
+            self.sync_step().sync_record(self.o)
+
+            self.assertEqual(self.o.valid, "invalid")
+            self.o.save.assert_called()
+
+    def test_sync_no_whitelist(self):
         self.sync_step().sync_record(self.o)
 
         self.assertEqual(self.o.valid, "invalid")
-        self.assertTrue(self.o.no_sync)
         self.o.save.assert_called()
 
 if __name__ == '__main__':

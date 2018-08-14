@@ -44,7 +44,8 @@ class ONUEventStep(EventStep):
             # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
             att_si = AttWorkflowDriverServiceInstance(
                 serial_number=event["serial_number"],
-                of_dpid=event["of_dpid"]
+                of_dpid=event["of_dpid"],
+                uni_port_id=event["uni_port_id"]
             )
             self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
         att_si.save()

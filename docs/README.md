@@ -46,6 +46,8 @@ topology_template:
       type: tosca.nodes.AttWorkflowDriverWhiteListEntry
       properties:
         serial_number: BRCM22222222
+        pon_port_id: 536870912
+        olt_logical_device_id: of:000000000a5a0072
       requirements:
         - owner:
             node: service#att

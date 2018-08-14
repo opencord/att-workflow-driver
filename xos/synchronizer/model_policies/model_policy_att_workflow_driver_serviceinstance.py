@@ -34,10 +34,6 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         elif si.authentication_state == "DENIED":
             subscriber.status = "auth-failed"
 
-        # If the OSS returns a c_tag use that one
-        if si.c_tag:
-            subscriber.c_tag = si.c_tag
-
         subscriber.save(always_update_timestamp=update_timestamp)
 
     def create_subscriber(self, si):
