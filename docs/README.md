@@ -24,3 +24,30 @@ helm install -n att-workflow xos-services/att-workflow-driver/ -f examples/image
 ```
 
 ## Configure this service
+
+You can use this TOSCA to add entries to the ONU whitelist:
+
+```yaml
+tosca_definitions_version: tosca_simple_yaml_1_0
+imports:
+  - custom_types/attworkflowdriverwhitelistentry.yaml
+  - custom_types/attworkflowdriverservice.yaml
+description: Create an entry in the whitelist
+topology_template:
+  node_templates:
+
+    service#att:
+      type: tosca.nodes.AttWorkflowDriverService
+      properties:
+        name: att-workflow-driver
+        must-exist: true
+
+    whitelist:
+      type: tosca.nodes.AttWorkflowDriverWhiteListEntry
+      properties:
+        serial_number: BRCM22222222
+      requirements:
+        - owner:
+            node: service#att
+            relationship: tosca.relationships.BelongsToOne
+```
