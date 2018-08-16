@@ -40,6 +40,8 @@ class SyncAttWorkflowDriverServiceInstance(SyncStep):
             return False
 
         whitelisted = matching_entries[0]
+
+        # FIXME if the ONU is not there yet it raise an index error, if that happens raise DeferredException
         pon_port = ONUDevice.objects.get(serial_number=si.serial_number).pon_port
         if pon_port.port_no != whitelisted.pon_port_id or si.of_dpid != whitelisted.device_id:
             log.warn("ONU disable as location don't match", object=str(si), serial_number=si.serial_number,
