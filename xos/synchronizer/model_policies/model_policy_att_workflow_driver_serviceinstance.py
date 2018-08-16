@@ -17,6 +17,9 @@
 from synchronizers.new_base.modelaccessor import RCORDSubscriber, ONUDevice, model_accessor
 from synchronizers.new_base.policy import Policy
 
+class DeferredException(Exception):
+    pass
+
 class AttWorkflowDriverServiceInstancePolicy(Policy):
     model_name = "AttWorkflowDriverServiceInstance"
 
@@ -24,37 +27,24 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         self.logger.debug("MODEL_POLICY: handle_create for AttWorkflowDriverServiceInstance %s " % si.id)
         self.handle_update(si)
 
-    def update_and_save_subscriber(self, subscriber, si, update_timestamp=False):
-        if si.authentication_state == "STARTED":
-            subscriber.status = "awaiting-auth"
-        elif si.authentication_state == "REQUESTED":
-            subscriber.status = "awaiting-auth"
-        elif si.authentication_state == "APPROVED":
-            subscriber.status = "enabled"
-        elif si.authentication_state == "DENIED":
-            subscriber.status = "auth-failed"
-
-        subscriber.save(always_update_timestamp=update_timestamp)
-
-    def create_subscriber(self, si):
-        subscriber = RCORDSubscriber()
-        subscriber.onu_device = si.serial_number
-        subscriber.status == "awaiting-auth"
-
-        return subscriber
-
     def handle_update(self, si):
+
+        # TODO if si.onu_state = DISABLED set subscriber.status to need_auth
+        # TODO cleanup
+
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s, valid=%s " % (si.id, si.valid))
 
         # Check to make sure the object has been synced. This is to cover a race condition where the model_policy
         # runs, is interrupted by the sync step, the sync step completes, and then the model policy ends up saving
         # a policed_timestamp that is later the updated timestamp set by the sync_step.
         if (si.backend_code!=1):
-            raise Exception("MODEL_POLICY: AttWorkflowDriverServiceInstance %s has not been synced yet" % si.id)
+            raise DeferredException("MODEL_POLICY: AttWorkflowDriverServiceInstance %s has not been synced yet" % si.id)
 
+        # waiting for Whitelist validation
         if not hasattr(si, 'valid') or si.valid is "awaiting":
-            self.logger.debug("MODEL_POLICY: skipping handle_update for AttWorkflowDriverServiceInstance %s as not validated yet" % si.id)
-            return
+            raise DeferredException("MODEL_POLICY: deferring handle_update for AttWorkflowDriverServiceInstance %s as not validated yet" % si.id)
+
+        # disabling ONU
         if si.valid == "invalid":
             self.logger.debug("MODEL_POLICY: disabling ONUDevice [%s] for AttWorkflowDriverServiceInstance %s" % (si.serial_number, si.id))
             onu = ONUDevice.objects.get(serial_number=si.serial_number)
@@ -82,24 +72,25 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
                 # we just want to find out if it exists or not
                 pass
 
+            if subscriber:
+                # if the subscriber is there and authentication is complete, update its state
+                self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=si.serial_number, authentication_state=si.authentication_state, onu_state=si.onu_state)
+                if si.onu_state == "DISABLED":
+                    # NOTE do not mess with onu.admin_state as that triggered this condition
+                    subscriber.status = "awaiting-auth"
+                elif si.authentication_state == "STARTED":
+                    subscriber.status = "awaiting-auth"
+                elif si.authentication_state == "REQUESTED":
+                    subscriber.status = "awaiting-auth"
+                elif si.authentication_state == "APPROVED":
+                    subscriber.status = "enabled"
+                elif si.authentication_state == "DENIED":
+                    subscriber.status = "auth-failed"
+
+                subscriber.save(always_update_timestamp=True)
             # if subscriber does not exist
-            self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=si.serial_number, create_on_discovery=si.owner.leaf_model.create_on_discovery)
-            if not subscriber:
-                # and create_on_discovery is false
-                if not si.owner.leaf_model.create_on_discovery:
-                    # do not create the subscriber, unless it has been approved
-                    if si.authentication_state == "APPROVED":
-                        self.logger.debug("MODEL_POLICY: creating subscriber as authentication_sate=APPROVED")
-                        subscriber = self.create_subscriber(si)
-                        self.update_and_save_subscriber(subscriber, si)
-                else:
-                    self.logger.debug("MODEL_POLICY: creating subscriber")
-                    subscriber = self.create_subscriber(si)
-                    self.update_and_save_subscriber(subscriber, si)
-            # if the subscriber is there and authentication is complete, update its state
-            elif subscriber and si.authentication_state == "APPROVED":
-                self.logger.debug("MODEL_POLICY: updating subscriber status")
-                self.update_and_save_subscriber(subscriber, si, update_timestamp=True)
+            else:
+                self.logger.warn("MODEL_POLICY: subscriber does not exists for this SI, doing nothing")
 
     def handle_delete(self, si):
         pass

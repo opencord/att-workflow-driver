@@ -36,27 +36,18 @@ class SubscriberAuthEventStep(EventStep):
 
         return onu_sn
 
-    def get_hippie_oss_si_by_sn(self, serial_number):
+    def get_si_by_sn(self, serial_number):
         try:
             return AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
         except IndexError:
             self.log.exception("authentication.events: Cannot find hippie-oss service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find hippie-oss service instance for this event")
 
-
-    def activate_subscriber(self, subscriber):
-        subscriber.status = 'enabled'
-        subscriber.save()
-
-    def disable_subscriber(self, subscriber):
-        subscriber.status = 'auth-failed'
-        subscriber.save()
-
     def process_event(self, event):
         value = json.loads(event.value)
 
         onu_sn = self.get_onu_sn(value)
-        si = self.get_hippie_oss_si_by_sn(onu_sn)
+        si = self.get_si_by_sn(onu_sn)
         if not si:
             self.log.exception("authentication.events: Cannot find hippie-oss service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find hippie-oss service instance for this event")

@@ -84,14 +84,17 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
             self.assertIn("has not been synced yet", e.exception.message)
 
-    def test_skip_update(self):
+    def test_defer_update(self):
         self.si.valid = "awaiting"
         self.si.backend_code = 1
 
         with patch.object(RCORDSubscriber, "save") as subscriber_save, \
             patch.object(ONUDevice, "save") as onu_save:
 
-            self.policy.handle_update(self.si)
+            with self.assertRaises(Exception) as e:
+                self.policy.handle_update(self.si)
+
+            self.assertEqual(e.exception.message, "MODEL_POLICY: deferring handle_update for AttWorkflowDriverServiceInstance 98052 as not validated yet")
             subscriber_save.assert_not_called()
             onu_save.assert_not_called()
 
@@ -99,6 +102,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.si.valid = "invalid"
         self.si.serial_number = "BRCM1234"
         self.si.backend_code = 1
+        self.si.onu_state = "ENABLED"
 
         onu = ONUDevice(
             serial_number=self.si.serial_number
@@ -120,6 +124,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.si.serial_number = "BRCM1234"
         self.si.c_tag = None
         self.si.backend_code = 1
+        self.si.onu_state = "ENABLED"
 
         onu = ONUDevice(
             serial_number=self.si.serial_number,
@@ -147,7 +152,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.si.backend_code = 1
         self.si.serial_number = "BRCM1234"
         self.si.authentication_state = "DENIEND"
-        self.si.owner.leaf_model.create_on_discovery = False
+        self.si.onu_state = "ENABLED"
 
         onu = ONUDevice(
             serial_number=self.si.serial_number,
@@ -166,40 +171,37 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             onu_save.assert_called()
             self.assertEqual(subscriber_save.call_count, 0)
 
-    def test_create_subscriber(self):
+    def test_subscriber_awaiting_status_onu_state_disabled(self):
         self.si.valid = "valid"
-        self.si.serial_number = "BRCM1234"
         self.si.backend_code = 1
+        self.si.serial_number = "BRCM1234"
+        self.si.onu_state = "DISABLED"
 
         onu = ONUDevice(
             serial_number=self.si.serial_number,
-            admin_state="ENABLED"
+            admin_state="DISABLED"
+        )
+
+        subscriber = RCORDSubscriber(
+            onu_device=self.si.serial_number,
+            status='enabled'
         )
 
         with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber, "save", autospec=True) as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
-
+                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
+                patch.object(RCORDSubscriber, "save") as subscriber_save:
             onu_objects.return_value = [onu]
+            subscriber_objects.return_value = [subscriber]
 
             self.policy.handle_update(self.si)
-            self.assertEqual(subscriber_save.call_count, 1)
+            self.assertEqual(subscriber.status, "awaiting-auth")
+            subscriber_save.assert_called()
 
-            subscriber = subscriber_save.call_args[0][0]
-            self.assertEqual(subscriber.onu_device, self.si.serial_number)
-
-            onu_save.assert_not_called()
-    
-    def test_create_subscriber_no_create_on_discovery(self):
-        """
-        test_create_subscriber_no_create_on_discovery
-        When si.owner.create_on_discovery = False we still need to create the subscriber after authentication
-        """
-
+    def test_subscriber_enable_status_auth_state_approved(self):
         self.si.valid = "valid"
-        self.si.serial_number = "BRCM1234"
         self.si.backend_code = 1
-        self.si.owner.leaf_model.create_on_discovery = False
+        self.si.serial_number = "BRCM1234"
+        self.si.onu_state = "ENABLED"
         self.si.authentication_state = "APPROVED"
 
         onu = ONUDevice(
@@ -207,19 +209,20 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             admin_state="ENABLED"
         )
 
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber, "save", autospec=True) as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
+        subscriber = RCORDSubscriber(
+            onu_device=self.si.serial_number,
+            status='awaiting-auth'
+        )
 
+        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
+                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
+                patch.object(RCORDSubscriber, "save") as subscriber_save:
             onu_objects.return_value = [onu]
+            subscriber_objects.return_value = [subscriber]
 
             self.policy.handle_update(self.si)
-            self.assertEqual(subscriber_save.call_count, 1)
-
-            subscriber = subscriber_save.call_args[0][0]
-            self.assertEqual(subscriber.onu_device, self.si.serial_number)
-
-            onu_save.assert_not_called()
+            self.assertEqual(subscriber.status, "enabled")
+            subscriber_save.assert_called()
 
 if __name__ == '__main__':
     unittest.main()

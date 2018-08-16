@@ -4,8 +4,6 @@ option app_label = "att-workflow-driver";
 message AttWorkflowDriverService (Service){
     option verbose_name = "AttWorkflowDriver Service";
     option kind = "OSS";
-
-    required bool create_on_discovery = 2 [help_text = "Whether to create the subscriber when an ONU is discovered", db_index = False, default = True];
 }
 
 message AttWorkflowDriverServiceInstance (ServiceInstance){
@@ -17,6 +15,7 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
     required string authentication_state = 3 [default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('STARTED', 'Started'), ('REQUESTED', 'Requested'), ('APPROVED', 'Approved'), ('DENIED', 'Denied'), )", max_length = 50, db_index = False];
     required string of_dpid = 4 [max_length = 254, db_index = False];
     required int32 uni_port_id = 5 [db_index = False];
+    required string onu_state = 6 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))"];
 }
 
 message AttWorkflowDriverWhiteListEntry (XOSBase) {
