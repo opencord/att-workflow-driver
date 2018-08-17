@@ -58,6 +58,7 @@ class ONUEventStep(EventStep):
         elif value["status"] == "disabled":
             self.log.info("onu.events: disabled onu", value=value)
             att_si.onu_state = "DISABLED"
+            att_si.authentication_state = "AWAITING"
         att_si.save(always_update_timestamp=True)
 
 
