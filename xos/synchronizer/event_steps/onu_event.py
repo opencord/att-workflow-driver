@@ -19,7 +19,7 @@ import time
 import os
 import sys
 from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverServiceInstance, model_accessor
+from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
 
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
@@ -42,7 +42,8 @@ class ONUEventStep(EventStep):
             att_si = AttWorkflowDriverServiceInstance(
                 serial_number=event["serial_number"],
                 of_dpid=event["of_dpid"],
-                uni_port_id=event["uni_port_id"]
+                uni_port_id=event["uni_port_id"],
+                owner=AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
             )
             self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
         return att_si
@@ -54,7 +55,7 @@ class ONUEventStep(EventStep):
         att_si = self.get_att_si(value)
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
-            att_si.onu_state = "ACTIVE"
+            att_si.onu_state = "ENABLED"
         elif value["status"] == "disabled":
             self.log.info("onu.events: disabled onu", value=value)
             att_si.onu_state = "DISABLED"
