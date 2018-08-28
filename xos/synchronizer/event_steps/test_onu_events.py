@@ -85,6 +85,8 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         self.event.value = json.dumps(self.event_dict)
 
+        self.att = AttWorkflowDriverService(name="att-workflow-driver")
+
     def tearDown(self):
         sys.path = self.sys_path_save
 
@@ -92,9 +94,11 @@ class TestSyncOLTDevice(unittest.TestCase):
     def test_create_instance(self):
 
         with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
+            patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
             patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
             att_si_mock.return_value = []
+            service_mock.return_value = [self.att]
 
             self.event_step.process_event(self.event)
 
@@ -105,7 +109,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
             self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
             self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
-            self.assertEqual(att_si.onu_state, "ACTIVE")
+            self.assertEqual(att_si.onu_state, "ENABLED")
 
     def test_reuse_instance(self):
 
@@ -129,7 +133,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
             self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
             self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
-            self.assertEqual(att_si.onu_state, "ACTIVE")
+            self.assertEqual(att_si.onu_state, "ENABLED")
 
     def test_disable_onu(self):
         self.event_dict = {
@@ -141,9 +145,11 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.event.value = json.dumps(self.event_dict)
 
         with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
+            patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
             patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
             att_si_mock.return_value = []
+            service_mock.return_value = [self.att]
 
             self.event_step.process_event(self.event)
 
