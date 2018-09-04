@@ -200,7 +200,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
     def test_subscriber_enable_status_auth_state_approved(self):
         self.si.valid = "valid"
         self.si.backend_code = 1
-        self.si.serial_number = "BRCM1234"
+        self.si.serial_number = "brcm1234"
         self.si.onu_state = "ENABLED"
         self.si.authentication_state = "APPROVED"
 
@@ -210,7 +210,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         )
 
         subscriber = RCORDSubscriber(
-            onu_device=self.si.serial_number,
+            onu_device="BRCM1234",
             status='awaiting-auth'
         )
 

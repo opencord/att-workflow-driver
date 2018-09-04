@@ -28,14 +28,14 @@ class AttWorkflowDriverServicePolicy(Policy):
         # TODO(smbaker): This is redudant with AttWorkflowDriverWhiteListEntry model policy, though etaining this does provide
         # a handy way to trigger a full reexamination of the whitelist.
 
-        whitelist = [x.serial_number for x in service.whitelist_entries.all()]
+        whitelist = [x.serial_number.lower() for x in service.whitelist_entries.all()]
 
         for si in sis:
-            if si.serial_number in whitelist and not si.valid == "valid":
+            if si.serial_number.lower() in whitelist and not si.valid == "valid":
                 self.logger.debug("MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si)
                 si.valid = "valid"
                 si.save(update_fields=["valid", "no_sync", "updated"], always_update_timestamp=True)
-            if si.serial_number not in whitelist and not si.valid == "invalid":
+            if si.serial_number.lower() not in whitelist and not si.valid == "invalid":
                 self.logger.debug(
                     "MODEL_POLICY: disabling AttWorkflowDriverServiceInstance because of change in the whitelist", si=si)
                 si.valid = "invalid"

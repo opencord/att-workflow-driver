@@ -87,6 +87,20 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
             self.assertEqual(si.valid, "valid")
 
+    def test_whitelist_update_case_insensitive(self):
+        """
+        When a whitelist entry is added, see that the AttWorkflowDriverIServicenstance was set to valid
+        """
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items:
+            si = AttWorkflowDriverServiceInstance(serial_number="brcm333", owner_id=self.service.id, valid="invalid")
+            oss_si_items.return_value = [si]
+
+            wle = AttWorkflowDriverWhiteListEntry(serial_number="BRCM333", owner_id=self.service.id, owner=self.service)
+
+            self.policy.handle_update(wle)
+
+            self.assertEqual(si.valid, "valid")
+
     def test_whitelist_delete(self):
         """
         When a whitelist entry is deleted, see that the AttWorkflowDriverIServicenstance was set to invalid

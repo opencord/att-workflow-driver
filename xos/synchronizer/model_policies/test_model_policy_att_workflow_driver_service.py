@@ -111,7 +111,7 @@ class TestModelPolicyAttWorkflowDriverService(unittest.TestCase):
             oss_si.return_value = [self.si1, self.si2, self.si3, self.si4]
 
             wle1 = AttWorkflowDriverWhiteListEntry(owner_id=self.service.id, serial_number="BRCM111")
-            wle2 = AttWorkflowDriverWhiteListEntry(owner_id=self.service.id, serial_number="BRCM222")
+            wle2 = AttWorkflowDriverWhiteListEntry(owner_id=self.service.id, serial_number="brcm222")
             self.service.whitelist_entries = self.MockObjectList([wle1, wle2])
 
             self.policy.handle_update(self.service)

@@ -67,7 +67,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
             subscriber = None
             try:
-                subscriber = RCORDSubscriber.objects.get(onu_device=si.serial_number)
+                subscriber = [s for s in RCORDSubscriber.objects.all() if s.onu_device.lower() == si.serial_number.lower()][0]
             except IndexError:
                 # we just want to find out if it exists or not
                 pass

@@ -26,10 +26,19 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
 
-        sis = AttWorkflowDriverServiceInstance.objects.filter(serial_number = whitelist.serial_number,
-                                                   owner_id = whitelist.owner.id)
+        # TODO is Django construct '__iexact' available here?
+        # sis = AttWorkflowDriverServiceInstance.objects.filter(
+        #     serial_number = whitelist.serial_number,
+        #     owner_id = whitelist.owner.id)
+
+        sis = AttWorkflowDriverServiceInstance.objects.all()
 
         for si in sis:
+
+            if si.serial_number.lower() != whitelist.serial_number.lower():
+                # NOTE we don't care about this SI as it has a different serial number
+                continue
+
             if si.valid != "valid":
                 self.logger.debug("MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si)
                 si.valid = "valid"
