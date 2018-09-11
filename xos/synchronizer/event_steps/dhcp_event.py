@@ -45,6 +45,8 @@ class SubscriberDhcpEventStep(EventStep):
 
         self.log.debug("dhcp.events: Got event for subscriber", subscriber=subscriber, event_value=value, onu_sn=onu_sn)
 
+        # NOTE it will be better to update the SI and use the model policy to update the subscriber,
+        # if this fails for any reason the event is lost
         subscriber.ip_address = value["ipAddress"]
         subscriber.mac_address = value["macAddress"]
         subscriber.save()

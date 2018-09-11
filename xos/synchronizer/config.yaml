@@ -22,7 +22,6 @@ required_models:
   - ONUDevice
 model_policies_dir: "/opt/xos/synchronizers/att-workflow-driver/model_policies"
 models_dir: "/opt/xos/synchronizers/att-workflow-driver/models"
-steps_dir: "/opt/xos/synchronizers/att-workflow-driver/steps"
 event_steps_dir: "/opt/xos/synchronizers/att-workflow-driver/event_steps"
 logging:
   version: 1

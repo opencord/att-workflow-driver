@@ -14,8 +14,17 @@
 # limitations under the License.
 
 
+
 from synchronizers.new_base.modelaccessor import RCORDSubscriber, ONUDevice, model_accessor
 from synchronizers.new_base.policy import Policy
+
+import os
+import sys
+
+sync_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+sys.path.append(sync_path)
+
+from helpers import AttHelpers
 
 class DeferredException(Exception):
     pass
@@ -23,74 +32,72 @@ class DeferredException(Exception):
 class AttWorkflowDriverServiceInstancePolicy(Policy):
     model_name = "AttWorkflowDriverServiceInstance"
 
+    separator = " // "
+
     def handle_create(self, si):
         self.logger.debug("MODEL_POLICY: handle_create for AttWorkflowDriverServiceInstance %s " % si.id)
         self.handle_update(si)
 
     def handle_update(self, si):
+        self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s " % (si.id))
 
-        # TODO if si.onu_state = DISABLED set subscriber.status to need_auth
-        # TODO cleanup
+        # validating ONU
+        if si.onu_state == "AWAITING" or si.onu_state == "ENABLED":
+            # we validate the ONU state only if it is enabled or awaiting,
+            # if it's disabled it means someone has disabled it
+            self.validate_onu_state(si)
 
-        self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s, valid=%s " % (si.id, si.valid))
+        # handling the subscriber status
+        subscriber = self.get_subscriber(si.serial_number)
 
-        # Check to make sure the object has been synced. This is to cover a race condition where the model_policy
-        # runs, is interrupted by the sync step, the sync step completes, and then the model policy ends up saving
-        # a policed_timestamp that is later the updated timestamp set by the sync_step.
-        if (si.backend_code!=1):
-            raise DeferredException("MODEL_POLICY: AttWorkflowDriverServiceInstance %s has not been synced yet" % si.id)
+        if subscriber:
+            self.update_subscriber(subscriber, si)
 
-        # waiting for Whitelist validation
-        if not hasattr(si, 'valid') or si.valid is "awaiting":
-            raise DeferredException("MODEL_POLICY: deferring handle_update for AttWorkflowDriverServiceInstance %s as not validated yet" % si.id)
+        si.save()
 
-        # disabling ONU
-        if si.valid == "invalid":
-            self.logger.debug("MODEL_POLICY: disabling ONUDevice [%s] for AttWorkflowDriverServiceInstance %s" % (si.serial_number, si.id))
-            onu = ONUDevice.objects.get(serial_number=si.serial_number)
-            onu.admin_state = "DISABLED"
-            onu.save(always_update_timestamp=True)
-            return
-        if si.valid == "valid":
+    def validate_onu_state(self, si):
+        [valid, message] = AttHelpers.validate_onu(si)
+        si.status_message += self.separator + message
+        if valid:
+            si.onu_state = "ENABLED"
+            self.update_onu(si.serial_number, "ENABLED")
+        else:
+            si.onu_state = "DISABLED"
+            self.update_onu(si.serial_number, "DISABLED")
 
-            # reactivating the ONUDevice
-            try:
-                onu = ONUDevice.objects.get(serial_number=si.serial_number)
-            except IndexError:
-                raise Exception("MODEL_POLICY: cannot find ONUDevice [%s] for AttWorkflowDriverServiceInstance %s" % (si.serial_number, si.id))
-            if onu.admin_state == "DISABLED":
-                self.logger.debug("MODEL_POLICY: enabling ONUDevice [%s] for AttWorkflowDriverServiceInstance %s" % (si.serial_number, si.id))
-                onu.admin_state = "ENABLED"
-                onu.save(always_update_timestamp=True)
+    def update_onu(self, serial_number, admin_state):
+        self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
+        onu = ONUDevice.objects.get(serial_number=serial_number)
+        onu.admin_state = admin_state
+        onu.save(always_update_timestamp=True)
 
-            # handling the subscriber status
+    def get_subscriber(self, serial_number):
+        try:
+            return [s for s in RCORDSubscriber.objects.all() if s.onu_device.lower() == serial_number.lower()][0]
+        except IndexError:
+            # If the subscriber doesn't exist we don't do anything
+            self.logger.debug("MODEL_POLICY: subscriber does not exists for this SI, doing nothing", onu_device=serial_number)
+            return None
 
-            subscriber = None
-            try:
-                subscriber = [s for s in RCORDSubscriber.objects.all() if s.onu_device.lower() == si.serial_number.lower()][0]
-            except IndexError:
-                # we just want to find out if it exists or not
-                pass
+    def update_subscriber(self, subscriber, si):
+        if si.authentication_state == "AWAITING":
+            subscriber.status = "awaiting-auth"
+            si.status_message += self.separator + "Awaiting Authentication"
+        elif si.authentication_state == "REQUESTED":
+            subscriber.status = "awaiting-auth"
+            si.status_message += self.separator + "Authentication requested"
+        elif si.authentication_state == "STARTED":
+            subscriber.status = "awaiting-auth"
+            si.status_message += self.separator + "Authentication started"
+        elif si.authentication_state == "APPROVED":
+            subscriber.status = "enabled"
+            si.status_message += self.separator + "Authentication succeded"
+        elif si.authentication_state == "DENIED":
+            subscriber.status = "auth-failed"
+            si.status_message += self.separator + "Authentication denied"
+        self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
 
-            if subscriber:
-                # if the subscriber is there and authentication is complete, update its state
-                self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=si.serial_number, authentication_state=si.authentication_state, onu_state=si.onu_state)
-                if si.onu_state == "DISABLED":
-                    # NOTE do not mess with onu.admin_state as that triggered this condition
-                    subscriber.status = "awaiting-auth"
-                elif si.authentication_state == "STARTED":
-                    subscriber.status = "awaiting-auth"
-                elif si.authentication_state == "REQUESTED":
-                    subscriber.status = "awaiting-auth"
-                elif si.authentication_state == "APPROVED":
-                    subscriber.status = "enabled"
-                elif si.authentication_state == "DENIED":
-                    subscriber.status = "auth-failed"
-
-                subscriber.save(always_update_timestamp=True)
-            # if subscriber does not exist
-            else:
-                self.logger.warn("MODEL_POLICY: subscriber does not exists for this SI, doing nothing")
+        subscriber.save(always_update_timestamp=True)
 
     def handle_delete(self, si):
         pass
