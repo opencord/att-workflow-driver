@@ -25,8 +25,7 @@ class AttWorkflowDriverServicePolicy(Policy):
 
         sis = AttWorkflowDriverServiceInstance.objects.all()
 
-        # TODO(smbaker): This is redudant with AttWorkflowDriverWhiteListEntry model policy, though etaining this does provide
-        # a handy way to trigger a full reexamination of the whitelist.
+        # TODO(teone): use the method defined in helpers.py
 
         whitelist = [x.serial_number.lower() for x in service.whitelist_entries.all()]
 
