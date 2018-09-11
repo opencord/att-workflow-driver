@@ -15,9 +15,6 @@
 
 
 import json
-import time
-import os
-import sys
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
 
@@ -60,6 +57,8 @@ class ONUEventStep(EventStep):
             self.log.info("onu.events: disabled onu", value=value)
             att_si.onu_state = "DISABLED"
             att_si.authentication_state = "AWAITING"
+        else:
+            self.log.warn("onu.events: Unkown status value: %s" % value["status"], value=value)
         att_si.save(always_update_timestamp=True)
 
 

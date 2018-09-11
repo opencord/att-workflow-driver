@@ -64,165 +64,146 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
 
+
         self.policy = AttWorkflowDriverServiceInstancePolicy()
         self.si = AttWorkflowDriverServiceInstance()
         self.si.owner = AttWorkflowDriverService()
+        self.si.serial_number = "BRCM1234"
 
     def tearDown(self):
         sys.path = self.sys_path_save
-        self.si = None
-
-    def test_not_synced(self):
-        self.si.valid = "awaiting"
-        self.si.backend_code = 0
-
-        with patch.object(RCORDSubscriber, "save") as subscriber_save, \
-            patch.object(ONUDevice, "save") as onu_save:
-
-            with self.assertRaises(Exception) as e:
-               self.policy.handle_update(self.si)
-
-            self.assertIn("has not been synced yet", e.exception.message)
-
-    def test_defer_update(self):
-        self.si.valid = "awaiting"
-        self.si.backend_code = 1
-
-        with patch.object(RCORDSubscriber, "save") as subscriber_save, \
-            patch.object(ONUDevice, "save") as onu_save:
-
-            with self.assertRaises(Exception) as e:
-                self.policy.handle_update(self.si)
-
-            self.assertEqual(e.exception.message, "MODEL_POLICY: deferring handle_update for AttWorkflowDriverServiceInstance 98052 as not validated yet")
-            subscriber_save.assert_not_called()
-            onu_save.assert_not_called()
-
-    def test_disable_onu(self):
-        self.si.valid = "invalid"
-        self.si.serial_number = "BRCM1234"
-        self.si.backend_code = 1
-        self.si.onu_state = "ENABLED"
-
-        onu = ONUDevice(
-            serial_number=self.si.serial_number
-        )
-
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber, "save") as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
-
-            onu_objects.return_value = [onu]
-
-            self.policy.handle_update(self.si)
-            subscriber_save.assert_not_called()
-            self.assertEqual(onu.admin_state, "DISABLED")
-            onu_save.assert_called()
 
     def test_enable_onu(self):
-        self.si.valid = "valid"
-        self.si.serial_number = "BRCM1234"
-        self.si.c_tag = None
-        self.si.backend_code = 1
-        self.si.onu_state = "ENABLED"
+        from helpers import AttHelpers
+        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+            patch.object(self.policy, "update_onu") as update_onu, \
+            patch.object(self.si, "save") as save_si:
+            validate_onu.return_value = [True, "valid onu"]
 
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="DISABLED"
-        )
+            self.policy.validate_onu_state(self.si)
 
-        subscriber = RCORDSubscriber(
-            onu_device=self.si.serial_number,
-            status='pre-provisioned'
-        )
+            update_onu.assert_called_once()
+            update_onu.assert_called_with("BRCM1234", "ENABLED")
 
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
-                patch.object(ONUDevice, "save") as onu_save:
+            self.assertIn("valid onu", self.si.status_message)
 
-            onu_objects.return_value = [onu]
-            subscriber_objects.return_value = [subscriber]
+    def test_disable_onu(self):
+        from helpers import AttHelpers
+        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+                patch.object(self.policy, "update_onu") as update_onu, \
+                patch.object(self.si, "save") as save_si:
+            validate_onu.return_value = [False, "invalid onu"]
 
+            self.policy.validate_onu_state(self.si)
+
+            update_onu.assert_called_once()
+            update_onu.assert_called_with("BRCM1234", "DISABLED")
+
+            self.assertIn("invalid onu", self.si.status_message)
+
+    def test_handle_update_validate_onu(self):
+        """
+        Testing that handle_update calls validate_onu with the correct parameters
+        when necessary
+        """
+        with patch.object(self.policy, "validate_onu_state") as validate_onu_state, \
+            patch.object(self.policy, "update_onu") as update_onu, \
+            patch.object(self.policy, "get_subscriber") as get_subscriber:
+            update_onu.return_value = None
+            get_subscriber.return_value = None
+
+            self.si.onu_state = "AWAITING"
             self.policy.handle_update(self.si)
-            self.assertEqual(onu.admin_state, "ENABLED")
-            onu_save.assert_called()
+            validate_onu_state.assert_called_with(self.si)
 
-    def test_do_not_create_subscriber(self):
-        self.si.valid = "valid"
-        self.si.backend_code = 1
-        self.si.serial_number = "BRCM1234"
-        self.si.authentication_state = "DENIEND"
-        self.si.onu_state = "ENABLED"
-
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="DISABLED"
-        )
-        
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber, "save", autospec=True) as subscriber_save, \
-                patch.object(ONUDevice, "save") as onu_save:
-
-            onu_objects.return_value = [onu]
-
+            self.si.onu_state = "ENABLED"
             self.policy.handle_update(self.si)
+            validate_onu_state.assert_called_with(self.si)
 
-            self.assertEqual(onu.admin_state, "ENABLED")
-            onu_save.assert_called()
-            self.assertEqual(subscriber_save.call_count, 0)
+            self.si.onu_state = "DISABLED"
+            self.policy.handle_update(self.si)
+            self.assertEqual(validate_onu_state.call_count, 2)
 
-    def test_subscriber_awaiting_status_onu_state_disabled(self):
-        self.si.valid = "valid"
-        self.si.backend_code = 1
-        self.si.serial_number = "BRCM1234"
+    def test_get_subscriber(self):
+
+        sub = RCORDSubscriber(
+            onu_device="BRCM1234"
+        )
+
+        with patch.object(RCORDSubscriber.objects, "get_items") as get_subscribers:
+            get_subscribers.return_value = [sub]
+
+            res = self.policy.get_subscriber("BRCM1234")
+            self.assertEqual(res, sub)
+
+            res = self.policy.get_subscriber("brcm1234")
+            self.assertEqual(res, sub)
+
+            res = self.policy.get_subscriber("foo")
+            self.assertEqual(res, None)
+
+    def test_update_subscriber(self):
+
+        sub = RCORDSubscriber(
+            onu_device="BRCM1234"
+        )
+
+        self.si.status_message = "some content"
+
+        with patch.object(sub, "save") as sub_save:
+            self.si.authentication_state = "AWAITING"
+            self.policy.update_subscriber(sub, self.si)
+            self.assertEqual(sub.status, "awaiting-auth")
+            self.assertIn("Awaiting Authentication", self.si.status_message)
+            sub_save.assert_called()
+            sub_save.reset_mock()
+
+            self.si.authentication_state = "REQUESTED"
+            self.policy.update_subscriber(sub, self.si)
+            self.assertEqual(sub.status, "awaiting-auth")
+            self.assertIn("Authentication requested", self.si.status_message)
+            sub_save.assert_called()
+            sub_save.reset_mock()
+
+            self.si.authentication_state = "STARTED"
+            self.policy.update_subscriber(sub, self.si)
+            self.assertEqual(sub.status, "awaiting-auth")
+            self.assertIn("Authentication started", self.si.status_message)
+            sub_save.assert_called()
+            sub_save.reset_mock()
+
+            self.si.authentication_state = "APPROVED"
+            self.policy.update_subscriber(sub, self.si)
+            self.assertEqual(sub.status, "enabled")
+            self.assertIn("Authentication succeded", self.si.status_message)
+            sub_save.assert_called()
+            sub_save.reset_mock()
+
+            self.si.authentication_state = "DENIED"
+            self.policy.update_subscriber(sub, self.si)
+            self.assertEqual(sub.status, "auth-failed")
+            self.assertIn("Authentication denied", self.si.status_message)
+            sub_save.assert_called()
+            sub_save.reset_mock()
+
+    def test_handle_update_subscriber(self):
         self.si.onu_state = "DISABLED"
 
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="DISABLED"
+        sub = RCORDSubscriber(
+            onu_device="BRCM1234"
         )
 
-        subscriber = RCORDSubscriber(
-            onu_device=self.si.serial_number,
-            status='enabled'
-        )
+        with patch.object(self.policy, "get_subscriber") as get_subscriber, \
+            patch.object(self.policy, "update_subscriber") as update_subscriber:
 
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
-                patch.object(RCORDSubscriber, "save") as subscriber_save:
-            onu_objects.return_value = [onu]
-            subscriber_objects.return_value = [subscriber]
-
+            get_subscriber.return_value = None
             self.policy.handle_update(self.si)
-            self.assertEqual(subscriber.status, "awaiting-auth")
-            subscriber_save.assert_called()
+            self.assertEqual(update_subscriber.call_count, 0)
 
-    def test_subscriber_enable_status_auth_state_approved(self):
-        self.si.valid = "valid"
-        self.si.backend_code = 1
-        self.si.serial_number = "brcm1234"
-        self.si.onu_state = "ENABLED"
-        self.si.authentication_state = "APPROVED"
-
-        onu = ONUDevice(
-            serial_number=self.si.serial_number,
-            admin_state="ENABLED"
-        )
-
-        subscriber = RCORDSubscriber(
-            onu_device="BRCM1234",
-            status='awaiting-auth'
-        )
-
-        with patch.object(ONUDevice.objects, "get_items") as onu_objects, \
-                patch.object(RCORDSubscriber.objects, "get_items") as subscriber_objects, \
-                patch.object(RCORDSubscriber, "save") as subscriber_save:
-            onu_objects.return_value = [onu]
-            subscriber_objects.return_value = [subscriber]
-
+            get_subscriber.return_value = sub
             self.policy.handle_update(self.si)
-            self.assertEqual(subscriber.status, "enabled")
-            subscriber_save.assert_called()
+            update_subscriber.assert_called_with(sub, self.si)
+
 
 if __name__ == '__main__':
     unittest.main()

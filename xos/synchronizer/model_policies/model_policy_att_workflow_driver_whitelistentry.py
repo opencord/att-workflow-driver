@@ -31,6 +31,8 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
         #     serial_number = whitelist.serial_number,
         #     owner_id = whitelist.owner.id)
 
+        # TODO(teone): use the method defined in helpers.py
+
         sis = AttWorkflowDriverServiceInstance.objects.all()
 
         for si in sis:

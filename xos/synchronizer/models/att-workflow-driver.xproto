@@ -3,19 +3,19 @@ option app_label = "att-workflow-driver";
 
 message AttWorkflowDriverService (Service){
     option verbose_name = "AttWorkflowDriver Service";
-    option kind = "OSS";
+    option kind = "control";
 }
 
 message AttWorkflowDriverServiceInstance (ServiceInstance){
     option owner_class_name = "AttWorkflowDriverService";
     option verbose_name = "AttWorkflowDriver Service Instance";
 
-    required string valid = 1 [default = "awaiting", choices = "(('awaiting', 'Awaiting Validation'), ('valid', 'Valid'), ('invalid', 'Invalid'))", help_text = "Wether this ONU has been validated by the external OSS"];
     required string serial_number = 2 [max_length = 254, db_index = False, tosca_key=True, unique = True];
     required string authentication_state = 3 [default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('STARTED', 'Started'), ('REQUESTED', 'Requested'), ('APPROVED', 'Approved'), ('DENIED', 'Denied'), )", max_length = 50, db_index = False];
     required string of_dpid = 4 [max_length = 254, db_index = False];
     required int32 uni_port_id = 5 [db_index = False];
     required string onu_state = 6 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))"];
+    optional string status_message = 7 [max_length = 254, db_index = False, default = ""];
 }
 
 message AttWorkflowDriverWhiteListEntry (XOSBase) {
