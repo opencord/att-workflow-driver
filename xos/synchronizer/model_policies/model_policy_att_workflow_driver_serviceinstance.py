@@ -32,8 +32,6 @@ class DeferredException(Exception):
 class AttWorkflowDriverServiceInstancePolicy(Policy):
     model_name = "AttWorkflowDriverServiceInstance"
 
-    separator = " // "
-
     def handle_create(self, si):
         self.logger.debug("MODEL_POLICY: handle_create for AttWorkflowDriverServiceInstance %s " % si.id)
         self.handle_update(si)
@@ -57,7 +55,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(si)
-        si.status_message += self.separator + message
+        si.status_message = message
         if valid:
             si.onu_state = "ENABLED"
             self.update_onu(si.serial_number, "ENABLED")
@@ -82,19 +80,19 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     def update_subscriber(self, subscriber, si):
         if si.authentication_state == "AWAITING":
             subscriber.status = "awaiting-auth"
-            si.status_message += self.separator + "Awaiting Authentication"
+            si.status_message = "Awaiting Authentication"
         elif si.authentication_state == "REQUESTED":
             subscriber.status = "awaiting-auth"
-            si.status_message += self.separator + "Authentication requested"
+            si.status_message = "Authentication requested"
         elif si.authentication_state == "STARTED":
             subscriber.status = "awaiting-auth"
-            si.status_message += self.separator + "Authentication started"
+            si.status_message = "Authentication started"
         elif si.authentication_state == "APPROVED":
             subscriber.status = "enabled"
-            si.status_message += self.separator + "Authentication succeded"
+            si.status_message = "Authentication succeded"
         elif si.authentication_state == "DENIED":
             subscriber.status = "auth-failed"
-            si.status_message += self.separator + "Authentication denied"
+            si.status_message = "Authentication denied"
         self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
 
         subscriber.save(always_update_timestamp=True)
