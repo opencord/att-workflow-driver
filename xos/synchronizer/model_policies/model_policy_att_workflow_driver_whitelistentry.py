@@ -16,6 +16,13 @@
 
 from synchronizers.new_base.modelaccessor import AttWorkflowDriverServiceInstance, AttWorkflowDriverWhiteListEntry, model_accessor
 from synchronizers.new_base.policy import Policy
+import os
+import sys
+
+sync_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+sys.path.append(sync_path)
+
+from helpers import AttHelpers
 
 class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     model_name = "AttWorkflowDriverWhiteListEntry"
@@ -23,15 +30,21 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def handle_create(self, whitelist):
         self.handle_update(whitelist)
 
+    def validate_onu_state(self, si):
+        [valid, message] = AttHelpers.validate_onu(si)
+        si.status_message = message
+        if valid:
+            si.onu_state = "ENABLED"
+        else:
+            si.onu_state = "DISABLED"
+            si.authentication_state = "AWAITING"
+
+        self.logger.debug(
+            "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si, onu_state=si.onu_state, authentication_state=si.authentication_state)
+        si.save(update_fields=["no_sync", "updated", "onu_state", "status_message", "authentication_state"], always_update_timestamp=True)
+
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
-
-        # TODO is Django construct '__iexact' available here?
-        # sis = AttWorkflowDriverServiceInstance.objects.filter(
-        #     serial_number = whitelist.serial_number,
-        #     owner_id = whitelist.owner.id)
-
-        # TODO(teone): use the method defined in helpers.py
 
         sis = AttWorkflowDriverServiceInstance.objects.all()
 
@@ -41,10 +54,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
                 # NOTE we don't care about this SI as it has a different serial number
                 continue
 
-            if si.valid != "valid":
-                self.logger.debug("MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si)
-                si.valid = "valid"
-                si.save(update_fields=["valid", "no_sync", "updated"], always_update_timestamp=True)
+            self.validate_onu_state(si)
 
         whitelist.backend_need_delete_policy=True
         whitelist.save(update_fields=["backend_need_delete_policy"])
@@ -56,15 +66,11 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
 
         assert(whitelist.owner)
 
-        sis = AttWorkflowDriverServiceInstance.objects.filter(serial_number = whitelist.serial_number,
-                                                   owner_id = whitelist.owner.id)
+        sis = AttWorkflowDriverServiceInstance.objects.all()
+        sis = [si for si in sis if si.serial_number.lower() == whitelist.serial_number.lower()]
 
         for si in sis:
-            if si.valid != "invalid":
-                self.logger.debug(
-                    "MODEL_POLICY: disabling AttWorkflowDriverServiceInstance because of change in the whitelist", si=si)
-                si.valid = "invalid"
-                si.save(update_fields=["valid", "no_sync", "updated"], always_update_timestamp=True)
+            self.validate_onu_state(si)
 
         whitelist.backend_need_reap=True
         whitelist.save(update_fields=["backend_need_reap"])

@@ -73,48 +73,62 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
         sys.path = self.sys_path_save
         self.service = None
 
+    def test_enable_onu(self):
+        from helpers import AttHelpers
+        si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
+        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+            patch.object(si, "save") as save_si:
+            validate_onu.return_value = [True, "valid onu"]
+
+            self.policy.validate_onu_state(si)
+
+            save_si.assert_called_once()
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['no_sync', 'updated', 'onu_state', 'status_message', 'authentication_state'])
+
+            self.assertEqual("valid onu", si.status_message)
+
+    def test_disable_onu(self):
+        from helpers import AttHelpers
+        si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
+        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+            patch.object(si, "save") as save_si:
+            validate_onu.return_value = [False, "invalid onu"]
+
+            self.policy.validate_onu_state(si)
+
+            save_si.assert_called_once()
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['no_sync', 'updated', 'onu_state', 'status_message', 'authentication_state'])
+
+            self.assertEqual("invalid onu", si.status_message)
+
     def test_whitelist_update(self):
-        """
-        When a whitelist entry is added, see that the AttWorkflowDriverIServicenstance was set to valid
-        """
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items:
-            si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
+        si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
+        wle = AttWorkflowDriverWhiteListEntry(serial_number="brcm333", owner_id=self.service.id, owner=self.service)
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items, \
+            patch.object(self.policy, "validate_onu_state") as validate_onu_state, \
+            patch.object(wle, "save") as wle_save:
             oss_si_items.return_value = [si]
 
-            wle = AttWorkflowDriverWhiteListEntry(serial_number="BRCM333", owner_id=self.service.id, owner=self.service)
 
             self.policy.handle_update(wle)
 
-            self.assertEqual(si.valid, "valid")
-
-    def test_whitelist_update_case_insensitive(self):
-        """
-        When a whitelist entry is added, see that the AttWorkflowDriverIServicenstance was set to valid
-        """
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items:
-            si = AttWorkflowDriverServiceInstance(serial_number="brcm333", owner_id=self.service.id, valid="invalid")
-            oss_si_items.return_value = [si]
-
-            wle = AttWorkflowDriverWhiteListEntry(serial_number="BRCM333", owner_id=self.service.id, owner=self.service)
-
-            self.policy.handle_update(wle)
-
-            self.assertEqual(si.valid, "valid")
+            validate_onu_state.assert_called_with(si)
+            self.assertTrue(wle.backend_need_delete_policy)
+            wle_save.assert_called_with(update_fields=["backend_need_delete_policy"])
 
     def test_whitelist_delete(self):
-        """
-        When a whitelist entry is deleted, see that the AttWorkflowDriverIServicenstance was set to invalid
-        """
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items:
-            si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="valid")
+        si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
+        wle = AttWorkflowDriverWhiteListEntry(serial_number="brcm333", owner_id=self.service.id, owner=self.service)
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items, \
+                patch.object(self.policy, "validate_onu_state") as validate_onu_state, \
+                patch.object(wle, "save") as wle_save:
             oss_si_items.return_value = [si]
-
-            wle = AttWorkflowDriverWhiteListEntry(serial_number="BRCM333", owner_id=self.service.id, owner=self.service)
 
             self.policy.handle_delete(wle)
 
-            self.assertEqual(si.valid, "invalid")
-
+            validate_onu_state.assert_called_with(si)
+            self.assertTrue(wle.backend_need_reap)
+            wle_save.assert_called_with(update_fields=["backend_need_reap"])
 if __name__ == '__main__':
     unittest.main()
 
