@@ -85,19 +85,19 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # TODO if the status hasn't changed don't save it again
         if si.authentication_state == "AWAITING":
             subscriber.status = "awaiting-auth"
-            si.status_message = "Awaiting Authentication"
+            si.status_message += " - Awaiting Authentication"
         elif si.authentication_state == "REQUESTED":
             subscriber.status = "awaiting-auth"
-            si.status_message = "Authentication requested"
+            si.status_message += " - Authentication requested"
         elif si.authentication_state == "STARTED":
             subscriber.status = "awaiting-auth"
-            si.status_message = "Authentication started"
+            si.status_message += " - Authentication started"
         elif si.authentication_state == "APPROVED":
             subscriber.status = "enabled"
-            si.status_message = "Authentication succeded"
+            si.status_message += " - Authentication succeded"
         elif si.authentication_state == "DENIED":
             subscriber.status = "auth-failed"
-            si.status_message = "Authentication denied"
+            si.status_message += " - Authentication denied"
         self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
 
         subscriber.save(always_update_timestamp=True)
