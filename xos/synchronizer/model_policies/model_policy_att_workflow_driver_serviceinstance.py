@@ -67,11 +67,13 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             self.update_onu(si.serial_number, "DISABLED")
 
     def update_onu(self, serial_number, admin_state):
-        # TODO if the status hasn't changed don't save it again
-        self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
-        onu = ONUDevice.objects.get(serial_number=serial_number)
-        onu.admin_state = admin_state
-        onu.save(always_update_timestamp=True)
+        onu = [onu for onu in ONUDevice.objects.all() if onu.serial_number.lower() == serial_number.lower()][0]
+        if onu.admin_state == admin_state:
+            self.logger.debug("MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" % (serial_number, admin_state))
+        else:
+            self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
+            onu.admin_state = admin_state
+            onu.save(always_update_timestamp=True)
 
     def get_subscriber(self, serial_number):
         try:
@@ -82,7 +84,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             return None
 
     def update_subscriber(self, subscriber, si):
-        # TODO if the status hasn't changed don't save it again
+        cur_status = subscriber.status
         if si.authentication_state == "AWAITING":
             subscriber.status = "awaiting-auth"
             si.status_message += " - Awaiting Authentication"
@@ -98,9 +100,13 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         elif si.authentication_state == "DENIED":
             subscriber.status = "auth-failed"
             si.status_message += " - Authentication denied"
-        self.logger.debug("MODEL_POLICY: handling subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
 
-        subscriber.save(always_update_timestamp=True)
+        if cur_status == subscriber.status:
+            self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
+                              authentication_state=si.authentication_state, subscriber_status=subscriber.status)
+        else:
+            self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
+            subscriber.save(always_update_timestamp=True)
 
     def handle_delete(self, si):
         pass

@@ -73,6 +73,24 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
     def tearDown(self):
         sys.path = self.sys_path_save
 
+    def test_update_onu(self):
+
+        onu = ONUDevice(
+            serial_number="BRCM1234",
+            admin_state="ENABLED"
+        )
+        with patch.object(ONUDevice.objects, "get_items") as get_onu, \
+            patch.object(onu, "save") as onu_save:
+            get_onu.return_value = [onu]
+
+            self.policy.update_onu("brcm1234", "ENABLED")
+            onu_save.assert_not_called()
+
+            self.policy.update_onu("brcm1234", "DISABLED")
+            self.assertEqual(onu.admin_state, "DISABLED")
+            onu_save.assert_called_with(always_update_timestamp=True)
+
+
     def test_enable_onu(self):
         from helpers import AttHelpers
         with patch.object(AttHelpers, "validate_onu") as validate_onu, \
@@ -157,6 +175,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertIn("Awaiting Authentication", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
+            sub.status = None
 
             self.si.authentication_state = "REQUESTED"
             self.policy.update_subscriber(sub, self.si)
@@ -164,6 +183,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertIn("Authentication requested", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
+            sub.status = None
 
             self.si.authentication_state = "STARTED"
             self.policy.update_subscriber(sub, self.si)
@@ -171,6 +191,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertIn("Authentication started", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
+            sub.status = None
 
             self.si.authentication_state = "APPROVED"
             self.policy.update_subscriber(sub, self.si)
@@ -178,6 +199,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertIn("Authentication succeded", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
+            sub.status = None
 
             self.si.authentication_state = "DENIED"
             self.policy.update_subscriber(sub, self.si)
@@ -185,6 +207,39 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertIn("Authentication denied", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
+            sub.status = None
+
+    def test_update_subscriber_not(self):
+        sub = RCORDSubscriber(
+            onu_device="BRCM1234"
+        )
+
+        with patch.object(sub, "save") as sub_save:
+            sub.status = "awaiting-auth"
+            self.si.authentication_state = "AWAITING"
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_not_called()
+
+            sub.status = "awaiting-auth"
+            self.si.authentication_state = "REQUESTED"
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_not_called()
+
+            sub.status = "awaiting-auth"
+            self.si.authentication_state = "STARTED"
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_not_called()
+
+            sub.status = "enabled"
+            self.si.authentication_state = "APPROVED"
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_not_called()
+
+            sub.status = "auth-failed"
+            self.si.authentication_state = "DENIED"
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_not_called()
+
 
     def test_handle_update_subscriber(self):
         self.si.onu_state = "DISABLED"
