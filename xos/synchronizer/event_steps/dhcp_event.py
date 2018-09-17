@@ -47,6 +47,9 @@ class SubscriberDhcpEventStep(EventStep):
 
         # NOTE it will be better to update the SI and use the model policy to update the subscriber,
         # if this fails for any reason the event is lost
-        subscriber.ip_address = value["ipAddress"]
-        subscriber.mac_address = value["macAddress"]
-        subscriber.save()
+        if subscriber.ip_address != value["ipAddress"] or \
+            subscriber.mac_address != value["macAddress"]:
+
+            subscriber.ip_address = value["ipAddress"]
+            subscriber.mac_address = value["macAddress"]
+            subscriber.save()
