@@ -25,5 +25,5 @@ message AttWorkflowDriverWhiteListEntry (XOSBase) {
     required manytoone owner->AttWorkflowDriverService:whitelist_entries = 1 [db_index = True, tosca_key=True];
     required string serial_number = 2 [max_length = 254, db_index = False, tosca_key=True, unique_with = "owner"];
     required int32 pon_port_id = 3 [db_index = False, help_text = "PON Port on which this ONU is expected to show up"];
-    required string device_id = 3 [max_length = 54, db_index = False, help_text = "OLT Device (logical device id) on which this ONU is expected to show up"];
+    required string device_id = 4 [max_length = 54, db_index = False, help_text = "OLT Device (logical device id) on which this ONU is expected to show up"];
 }
