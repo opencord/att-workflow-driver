@@ -44,6 +44,9 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             # we validate the ONU state only if it is enabled or awaiting,
             # if it's disabled it means someone has disabled it
             self.validate_onu_state(si)
+        else:
+            # just clean the status
+            si.status_message = ""
 
         # handling the subscriber status
         subscriber = self.get_subscriber(si.serial_number)
