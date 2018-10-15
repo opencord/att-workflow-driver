@@ -32,16 +32,16 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
 
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(si)
-        si.status_message = message
+        AttHelpers.update_field(si, "status_message", message)
         if valid:
-            si.onu_state = "ENABLED"
+            AttHelpers.update_field(si, "onu_state", "ENABLED")
         else:
-            si.onu_state = "DISABLED"
-            si.authentication_state = "AWAITING"
+            AttHelpers.update_field(si, "onu_state", "DISABLED")
+            AttHelpers.update_field(si, "authentication_state", "AWAITING")
 
         self.logger.debug(
             "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si, onu_state=si.onu_state, authentication_state=si.authentication_state)
-        si.save(update_fields=["no_sync", "updated", "onu_state", "status_message", "authentication_state"], always_update_timestamp=True)
+        AttHelpers.save_object(si)
 
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)

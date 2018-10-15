@@ -17,6 +17,9 @@ from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry
 
 from xosconfig import Config
 from multistructlog import create_logger
+import threading
+
+threadLocal = threading.local()
 
 log = create_logger(Config().get('logging'))
 
@@ -57,3 +60,60 @@ class AttHelpers():
             return [False, "ONU activated in wrong location"]
 
         return [True, "ONU has been validated"]
+
+    @staticmethod
+    def init_state(obj):
+        if not getattr(threadLocal, "atthelper", None):
+            threadLocal.atthelper = {}
+        if obj not in threadLocal.atthelper:
+            threadLocal.atthelper[obj] = {}
+            threadLocal.atthelper[obj]["new"] = False
+            threadLocal.atthelper[obj]["update_fields"] = []
+
+    @staticmethod
+    def get_object_dict(obj):
+        AttHelpers.init_state(obj)
+        return threadLocal.atthelper[obj]
+
+    @staticmethod
+    def delete_object_dict(obj):
+        del threadLocal.atthelper[obj]
+
+    @staticmethod
+    def new_object(obj):
+        odict = AttHelpers.get_object_dict(obj)
+        odict["new"] = True
+
+    @staticmethod
+    def update_field(obj, name, value):
+        odict = AttHelpers.get_object_dict(obj)
+        oldvalue = getattr(obj, name)
+        if oldvalue != value:
+            setattr(obj, name, value)
+            if name not in odict:
+                odict[name] = oldvalue
+            if odict["update_fields"]:
+                if name not in odict["update_fields"]:
+                    odict["update_fields"].append(name)
+            else:
+                odict["update_fields"] = [name]
+
+    @staticmethod
+    def save_object(obj, always_update_timestamp=False):
+        if obj not in threadLocal.atthelper:
+            log.warn("save_object: Object not found in dictionary, not saving", object=str(obj), **obj.tologdict())
+            return
+        odict = AttHelpers.get_object_dict(obj)
+        if odict["new"]:
+            obj.save(always_update_timestamp=always_update_timestamp)
+        elif odict["update_fields"]:
+            # Prune out values that didn't change.  Iterate over a copy of the list.
+            for field in list(odict["update_fields"]):
+                if getattr(obj, field) == odict[field]:
+                    odict["update_fields"].remove(field)
+                    log.debug("save_object: field %s did not change, not saving" % field)
+            if odict["update_fields"]:
+                if always_update_timestamp:
+                    odict["update_fields"].append("updated")
+                obj.save(update_fields=sorted(odict["update_fields"]), always_update_timestamp=always_update_timestamp)
+        AttHelpers.delete_object_dict(obj)

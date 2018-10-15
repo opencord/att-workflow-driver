@@ -46,7 +46,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             self.validate_onu_state(si)
         else:
             # just clean the status
-            si.status_message = ""
+            AttHelpers.update_field(si, "status_message", "")
 
         # handling the subscriber status
         subscriber = self.get_subscriber(si.serial_number)
@@ -54,16 +54,16 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         if subscriber:
             self.update_subscriber(subscriber, si)
 
-        si.save()
+        AttHelpers.save_object(si)
 
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(si)
-        si.status_message = message
+        AttHelpers.update_field(si, "status_message", message)
         if valid:
-            si.onu_state = "ENABLED"
+            AttHelpers.update_field(si, "onu_state", "ENABLED")
             self.update_onu(si.serial_number, "ENABLED")
         else:
-            si.onu_state = "DISABLED"
+            AttHelpers.update_field(si, "onu_state", "DISABLED")
             self.update_onu(si.serial_number, "DISABLED")
 
     def update_onu(self, serial_number, admin_state):
@@ -72,8 +72,8 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             self.logger.debug("MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" % (serial_number, admin_state))
         else:
             self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
-            onu.admin_state = admin_state
-            onu.save(always_update_timestamp=True)
+            AttHelpers.update_field(onu, "admin_state", admin_state)
+            AttHelpers.save_object(onu)
 
     def get_subscriber(self, serial_number):
         try:
@@ -86,27 +86,27 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     def update_subscriber(self, subscriber, si):
         cur_status = subscriber.status
         if si.authentication_state == "AWAITING":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Awaiting Authentication"
+            AttHelpers.update_field(subscriber, "status", "awaiting-auth")
+            AttHelpers.update_field(si, "status_message", si.status_message + " - Awaiting Authentication")
         elif si.authentication_state == "REQUESTED":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Authentication requested"
+            AttHelpers.update_field(subscriber, "status", "awaiting-auth")
+            AttHelpers.update_field(si, "status_message", si.status_message + " - Authentication requested")
         elif si.authentication_state == "STARTED":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Authentication started"
+            AttHelpers.update_field(subscriber, "status", "awaiting-auth")
+            AttHelpers.update_field(si, "status_message", si.status_message + " - Authentication started")
         elif si.authentication_state == "APPROVED":
-            subscriber.status = "enabled"
-            si.status_message += " - Authentication succeded"
+            AttHelpers.update_field(subscriber, "status", "enabled")
+            AttHelpers.update_field(si, "status_message", si.status_message + " - Authentication succeded")
         elif si.authentication_state == "DENIED":
-            subscriber.status = "auth-failed"
-            si.status_message += " - Authentication denied"
+            AttHelpers.update_field(subscriber, "status", "auth-failed")
+            AttHelpers.update_field(si, "status_message", si.status_message + " - Authentication denied")
 
         if cur_status == subscriber.status:
             self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
                               authentication_state=si.authentication_state, subscriber_status=subscriber.status)
         else:
             self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
-            subscriber.save(always_update_timestamp=True)
+            AttHelpers.save_object(subscriber)
 
     def handle_delete(self, si):
         pass
