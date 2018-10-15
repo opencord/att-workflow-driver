@@ -57,3 +57,24 @@ class AttHelpers():
             return [False, "ONU activated in wrong location"]
 
         return [True, "ONU has been validated"]
+
+    @staticmethod
+    def new_object(obj):
+        obj.atthelper_new_object = True
+
+    @staticmethod
+    def update_field(obj, name, value):
+        if getattr(obj, name) != value:
+            setattr(obj, name, value)
+            if getattr(obj, "atthelper_update_fields", None):
+                if name not in obj.atthelper_update_fields:
+                    obj.atthelper_update_fields.append(name)
+            else:
+                obj.atthelper_update_fields = ["updated", name]
+
+    @staticmethod
+    def save_object(obj, always_update_timestamp=False):
+        if getattr(obj, 'atthelper_new_object', False):
+            obj.save(always_update_timestamp=always_update_timestamp)
+        elif getattr(obj, 'atthelper_update_fields', None):
+            obj.save(update_fields=sorted(obj.atthelper_update_fields), always_update_timestamp=always_update_timestamp)

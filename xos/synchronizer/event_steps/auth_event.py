@@ -20,6 +20,8 @@ import sys
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import VOLTService, AttWorkflowDriverServiceInstance, model_accessor
 
+from helpers import AttHelpers
+
 class SubscriberAuthEventStep(EventStep):
     topics = ["authentication.events"]
     technology = "kafka"
@@ -52,6 +54,6 @@ class SubscriberAuthEventStep(EventStep):
             self.log.exception("authentication.events: Cannot find hippie-oss service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find hippie-oss service instance for this event")
 
-        si.authentication_state = value["authenticationState"];
-        si.no_sync = True
-        si.save(update_fields=["authentication_state", "no_sync", "updated"], always_update_timestamp=True)
+        AttHelpers.update_field(si, "authentication_state", value["authenticationState"])
+        AttHelpers.update_field(si, "no_sync", True)
+        AttHelpers.save_object(si, always_update_timestamp=True)
