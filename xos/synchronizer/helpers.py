@@ -17,6 +17,9 @@ from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry
 
 from xosconfig import Config
 from multistructlog import create_logger
+import threading
+
+threadLocal = threading.local()
 
 log = create_logger(Config().get('logging'))
 
@@ -57,3 +60,26 @@ class AttHelpers():
             return [False, "ONU activated in wrong location"]
 
         return [True, "ONU has been validated"]
+
+    @staticmethod
+    def new_object(obj):
+        threadLocal.atthelper_new_object = True
+
+    @staticmethod
+    def update_field(obj, name, value):
+        if getattr(obj, name) != value:
+            setattr(obj, name, value)
+            if getattr(threadLocal, "atthelper_update_fields", None):
+                if name not in threadLocal.atthelper_update_fields:
+                    threadLocal.atthelper_update_fields.append(name)
+            else:
+                threadLocal.atthelper_update_fields = ["updated", name]
+
+    @staticmethod
+    def save_object(obj, always_update_timestamp=False):
+        if getattr(threadLocal, 'atthelper_new_object', False):
+            obj.save(always_update_timestamp=always_update_timestamp)
+        elif getattr(threadLocal, 'atthelper_update_fields', None):
+            obj.save(update_fields=sorted(threadLocal.atthelper_update_fields), always_update_timestamp=always_update_timestamp)
+        threadLocal.atthelper_new_object = False
+        threadLocal.atthelper_update_fields = None

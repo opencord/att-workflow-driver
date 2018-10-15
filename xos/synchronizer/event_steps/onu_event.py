@@ -18,6 +18,8 @@ import json
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
 
+from helpers import AttHelpers
+
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
     technology = "kafka"
@@ -30,9 +32,9 @@ class ONUEventStep(EventStep):
     def get_att_si(self, event):
         try:
             att_si = AttWorkflowDriverServiceInstance.objects.get(serial_number=event["serial_number"])
-            att_si.no_sync = False;
-            att_si.uni_port_id = event["uni_port_id"]
-            att_si.of_dpid = event["of_dpid"]
+            AttHelpers.update_field(att_si, "no_sync", False)
+            AttHelpers.update_field(att_si, "uni_port_id", event["uni_port_id"])
+            AttHelpers.update_field(att_si, "of_dpid", event["of_dpid"])
             self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
             # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
@@ -43,6 +45,7 @@ class ONUEventStep(EventStep):
                 owner=AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
             )
             self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
+            AttHelpers.new_object(att_si)
         return att_si
 
     def process_event(self, event):
@@ -52,13 +55,13 @@ class ONUEventStep(EventStep):
         att_si = self.get_att_si(value)
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
-            att_si.onu_state = "ENABLED"
+            AttHelpers.update_field(att_si, "onu_state", "ENABLED")
         elif value["status"] == "disabled":
             self.log.info("onu.events: disabled onu", value=value)
-            att_si.onu_state = "DISABLED"
-            att_si.authentication_state = "AWAITING"
+            AttHelpers.update_field(att_si, "onu_state", "DISABLED")
+            AttHelpers.update_field(att_si, "authentication_state", "AWAITING")
         else:
             self.log.warn("onu.events: Unkown status value: %s" % value["status"], value=value)
-        att_si.save(always_update_timestamp=True)
+        AttHelpers.save_object(att_si, always_update_timestamp=True)
 
 
