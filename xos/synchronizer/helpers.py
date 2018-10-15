@@ -17,6 +17,9 @@ from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry
 
 from xosconfig import Config
 from multistructlog import create_logger
+import threading
+
+threadLocal = threading.local()
 
 log = create_logger(Config().get('logging'))
 
@@ -57,3 +60,39 @@ class AttHelpers():
             return [False, "ONU activated in wrong location"]
 
         return [True, "ONU has been validated"]
+
+    @staticmethod
+    def init_state(obj):
+        if not getattr(threadLocal, "atthelper", None):
+            threadLocal.atthelper = {}
+        if obj not in threadLocal.atthelper:
+            threadLocal.atthelper[obj] = {}
+            threadLocal.atthelper[obj]["new"] = False
+            threadLocal.atthelper[obj]["update_fields"] = []
+
+    @staticmethod
+    def new_object(obj):
+        AttHelpers.init_state(obj)
+        threadLocal.atthelper[obj]["new"] = True
+
+    @staticmethod
+    def update_field(obj, name, value):
+        AttHelpers.init_state(obj)
+        if getattr(obj, name) != value:
+            setattr(obj, name, value)
+            if threadLocal.atthelper[obj]["update_fields"]:
+                if name not in threadLocal.atthelper[obj]["update_fields"]:
+                    threadLocal.atthelper[obj]["update_fields"].append(name)
+            else:
+                threadLocal.atthelper[obj]["update_fields"] = ["updated", name]
+
+    @staticmethod
+    def save_object(obj, always_update_timestamp=False):
+        if obj not in threadLocal.atthelper:
+            log.warn("save_object: Object not found in dictionary, not saving", object=str(obj), **obj.tologdict())
+            return
+        if threadLocal.atthelper[obj]["new"]:
+            obj.save(always_update_timestamp=always_update_timestamp)
+        elif threadLocal.atthelper[obj]["update_fields"]:
+            obj.save(update_fields=sorted(threadLocal.atthelper[obj]["update_fields"]), always_update_timestamp=always_update_timestamp)
+        del threadLocal.atthelper[obj]
