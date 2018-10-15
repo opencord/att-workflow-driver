@@ -20,6 +20,8 @@ import sys
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import VOLTService, RCORDSubscriber, model_accessor
 
+from helpers import AttHelpers
+
 class SubscriberDhcpEventStep(EventStep):
     topics = ["dhcp.events"]
     technology = "kafka"
@@ -51,6 +53,6 @@ class SubscriberDhcpEventStep(EventStep):
             subscriber.mac_address != value["macAddress"]:
 
             # FIXME apparently it's always saving
-            subscriber.ip_address = value["ipAddress"]
-            subscriber.mac_address = value["macAddress"]
-            subscriber.save()
+            AttHelpers.update_field(subscriber, 'ip_address', value["ipAddress"])
+            AttHelpers.update_field(subscriber, 'mac_address', value["macAddress"])
+            AttHelpers.save_object(subscriber)
