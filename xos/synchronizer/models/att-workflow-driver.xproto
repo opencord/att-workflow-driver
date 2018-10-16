@@ -16,6 +16,9 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
     required int32 uni_port_id = 5 [db_index = False];
     required string onu_state = 6 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))"];
     optional string status_message = 7 [max_length = 254, db_index = False, default = ""];
+    optional string dhcp_state = 8 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('DHCPDISCOVER', 'DHCPDISCOVER'), ('DHCPACK', 'DHCPACK'), ('DHCPREQUEST', 'DHCPREQUEST'))"];
+    optional string ip_address = 9 [max_length = 20, db_index = False];
+    optional string mac_address = 10 [max_length = 20, db_index = False];
 }
 
 message AttWorkflowDriverWhiteListEntry (XOSBase) {

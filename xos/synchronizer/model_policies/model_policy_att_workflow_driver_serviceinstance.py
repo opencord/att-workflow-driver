@@ -46,7 +46,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             self.validate_onu_state(si)
         else:
             # just clean the status
-            si.status_message = ""
+            si.status_message = "ONU has been disabled"
 
         # handling the subscriber status
         subscriber = self.get_subscriber(si.serial_number)
@@ -101,12 +101,18 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             subscriber.status = "auth-failed"
             si.status_message += " - Authentication denied"
 
-        if cur_status == subscriber.status:
+        # NOTE we save the subscriber only if:
+        # - the status has changed
+        # - we get a DHCPACK event
+        if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
+            self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
+            if si.ip_address and si.mac_address:
+                subscriber.ip_address = si.ip_address
+                subscriber.mac_address = si.mac_address
+            subscriber.save(always_update_timestamp=True)
+        else:
             self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
                               authentication_state=si.authentication_state, subscriber_status=subscriber.status)
-        else:
-            self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
-            subscriber.save(always_update_timestamp=True)
 
     def handle_delete(self, si):
         pass

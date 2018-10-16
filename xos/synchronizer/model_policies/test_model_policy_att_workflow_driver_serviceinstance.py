@@ -240,6 +240,22 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.policy.update_subscriber(sub, self.si)
             sub_save.assert_not_called()
 
+    def test_update_subscriber_dhcp(self):
+        sub = RCORDSubscriber(
+            onu_device="BRCM1234"
+        )
+
+        self.si.dhcp_state = "DHCPACK"
+        self.si.ip_address = "1234"
+        self.si.mac_address = "4321"
+
+        with patch.object(sub, "save") as sub_save:
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_called()
+            self.assertEqual(sub.mac_address, self.si.mac_address)
+            self.assertEqual(sub.ip_address, self.si.ip_address)
+
+
 
     def test_handle_update_subscriber(self):
         self.si.onu_state = "DISABLED"
@@ -249,7 +265,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         )
 
         with patch.object(self.policy, "get_subscriber") as get_subscriber, \
-            patch.object(self.policy, "update_onu") as update_onu, \
             patch.object(self.policy, "update_subscriber") as update_subscriber:
 
             get_subscriber.return_value = None
