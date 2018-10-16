@@ -107,5 +107,5 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
             self.event_step.process_event(self.event)
 
-            self.hippie_si.save.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'no_sync', 'updated'])
+            self.hippie_si.save.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'updated'])
             self.assertEqual(self.hippie_si.authentication_state, 'APPROVED')

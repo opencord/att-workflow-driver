@@ -81,12 +81,16 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         self.volt.name = "vOLT"
         self.volt.leaf_model = Mock()
 
-        self.subscriber = RCORDSubscriber()
-        self.subscriber.onu_device = "BRCM1234"
-        self.subscriber.save = Mock()
+        # self.subscriber = RCORDSubscriber()
+        # self.subscriber.onu_device = "BRCM1234"
+        # self.subscriber.save = Mock()
 
         self.mac_address = "00:AA:00:00:00:01"
         self.ip_address = "192.168.3.5"
+
+        self.si = AttWorkflowDriverServiceInstance()
+        self.si.serial_number = "BRCM1234"
+        self.si.save = Mock()
 
 
     def tearDown(self):
@@ -98,19 +102,21 @@ class TestSubscriberAuthEvent(unittest.TestCase):
             "deviceId" : "of:0000000000000001",
             "portNumber" : "1",
             "macAddress" : self.mac_address,
-            "ipAddress" : self.ip_address
+            "ipAddress" : self.ip_address,
+            "messageType": "DHCPREQUEST"
         })
 
         with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-            patch.object(RCORDSubscriber.objects, "get_items") as subscriber_mock, \
+            patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock, \
             patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
 
             volt_service_mock.return_value = [self.volt]
             get_onu_sn.return_value = "BRCM1234"
-            subscriber_mock.return_value = [self.subscriber]
+            si_mock.return_value = [self.si]
 
             self.event_step.process_event(self.event)
 
-            self.subscriber.save.assert_called()
-            self.assertEqual(self.subscriber.mac_address, self.mac_address)
-            self.assertEqual(self.subscriber.ip_address, self.ip_address)
+            self.si.save.assert_called()
+            self.assertEqual(self.si.dhcp_state, "DHCPREQUEST")
+            self.assertEqual(self.si.mac_address, self.mac_address)
+            self.assertEqual(self.si.ip_address, self.ip_address)

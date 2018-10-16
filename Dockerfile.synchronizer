@@ -16,7 +16,7 @@
 
 # xosproject/att-workflow-driver-synchronizer
 
-FROM xosproject/xos-synchronizer-base:2.1.12
+FROM xosproject/xos-synchronizer-base:2.1.19
 
 COPY xos/synchronizer /opt/xos/synchronizers/att-workflow-driver
 COPY VERSION /opt/xos/synchronizers/att-workflow-driver/

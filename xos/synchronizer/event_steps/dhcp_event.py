@@ -19,6 +19,7 @@ import os
 import sys
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import VOLTService, RCORDSubscriber, model_accessor
+from helpers import AttHelpers
 
 class SubscriberDhcpEventStep(EventStep):
     topics = ["dhcp.events"]
@@ -27,30 +28,31 @@ class SubscriberDhcpEventStep(EventStep):
     def __init__(self, *args, **kwargs):
         super(SubscriberDhcpEventStep, self).__init__(*args, **kwargs)
 
-    def get_onu_sn(self, event):
-        olt_service = VOLTService.objects.first()
-        onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
-        if not onu_sn or onu_sn is None:
-            self.log.exception("dhcp.events: Cannot find onu serial number for this event", kafka_event=event)
-            raise Exception("dhcp.events: Cannot find onu serial number for this event")
-
-        return onu_sn
-
     def process_event(self, event):
         value = json.loads(event.value)
 
-        onu_sn = self.get_onu_sn(value)
+        onu_sn = AttHelpers.get_onu_sn(value)
+        si = AttHelpers.get_si_by_sn(onu_sn)
 
-        subscriber = RCORDSubscriber.objects.get(onu_device=onu_sn)
+        if not si:
+            self.log.exception("dhcp.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
+            raise Exception("dhcp.events: Cannot find att-workflow-driver service instance for this event")
 
-        self.log.info("dhcp.events: Got event for subscriber", subscriber=subscriber, event_value=value, onu_sn=onu_sn)
+        self.log.info("dhcp.events: Got event for subscriber", event_value=value, onu_sn=onu_sn, si=si)
 
-        # NOTE it will be better to update the SI and use the model policy to update the subscriber,
-        # if this fails for any reason the event is lost
-        if subscriber.ip_address != value["ipAddress"] or \
-            subscriber.mac_address != value["macAddress"]:
-
-            # FIXME apparently it's always saving
-            subscriber.ip_address = value["ipAddress"]
-            subscriber.mac_address = value["macAddress"]
-            subscriber.save()
+        si.dhcp_state = value["messageType"];
+        si.ip_address = value["ipAddress"];
+        si.mac_address = value["macAddress"];
+        si.save(update_fields=["dhcp_state", "ip_address", "mac_address", "updated"], always_update_timestamp=True)
+        # subscriber = RCORDSubscriber.objects.get(onu_device=onu_sn)
+        #
+        #
+        # # NOTE it will be better to update the SI and use the model policy to update the subscriber,
+        # # if this fails for any reason the event is lost
+        #
+        # if value["messageType"] == "DHCPACK":
+        #
+        #     # FIXME apparently it's always saving
+        #     subscriber.ip_address = value["ipAddress"]
+        #     subscriber.mac_address = value["macAddress"]
+        #     subscriber.save()

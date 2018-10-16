@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.syncstep import DeferredException
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry, ONUDevice, model_accessor
+from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry, AttWorkflowDriverServiceInstance, ONUDevice, VOLTService, model_accessor
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -52,8 +52,32 @@ class AttHelpers():
             raise DeferredException("ONU device %s is not know to XOS yet" % att_si.serial_number)
 
         if pon_port.port_no != whitelisted.pon_port_id or att_si.of_dpid != whitelisted.device_id:
-            log.warn("ONU disable as location don't match", object=str(att_si), serial_number=att_si.serial_number,
+            log.warn("ONU disable as location don't match",
+                     object=str(att_si),
+                     serial_number=att_si.serial_number,
+                     pon_port=pon_port.port_no,
+                     whitelisted_pon_port=whitelisted.pon_port_id,
+                     device_id=att_si.of_dpid,
+                     whitelisted_device_id=whitelisted.device_id,
                      **att_si.tologdict())
             return [False, "ONU activated in wrong location"]
 
         return [True, "ONU has been validated"]
+
+    @staticmethod
+    def get_onu_sn(event):
+        olt_service = VOLTService.objects.first()
+        onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
+        if not onu_sn or onu_sn is None:
+            log.exception("Cannot find onu serial number for this event", kafka_event=event)
+            raise Exception("Cannot find onu serial number for this event")
+
+        return onu_sn
+
+    @staticmethod
+    def get_si_by_sn(serial_number):
+        try:
+            return AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
+        except IndexError:
+            log.exception("Cannot find att-workflow-driver service instance for this serial number", serial_number=serial_number)
+            raise Exception("Cannot find att-workflow-driver service instance for this serial number %s", serial_number)
