@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fd89944_810b5f0f",
+        "filename": "xos/synchronizer/helpers.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2018-10-16T23:38:30Z",
+      "side": 1,
+      "message": "disabled?",
+      "range": {
+        "startLine": 55,
+        "startChar": 26,
+        "endLine": 55,
+        "endChar": 33
+      },
+      "revId": "de8cfa8b2ba32116edcb55a5ad34e384657c8626",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
