@@ -18,7 +18,8 @@ import time
 import os
 import sys
 from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import VOLTService, AttWorkflowDriverServiceInstance, model_accessor
+from synchronizers.new_base.modelaccessor import model_accessor
+from helpers import AttHelpers
 
 class SubscriberAuthEventStep(EventStep):
     topics = ["authentication.events"]
@@ -27,31 +28,14 @@ class SubscriberAuthEventStep(EventStep):
     def __init__(self, *args, **kwargs):
         super(SubscriberAuthEventStep, self).__init__(*args, **kwargs)
 
-    def get_onu_sn(self, event):
-        olt_service = VOLTService.objects.first()
-        onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
-        if not onu_sn or onu_sn is None:
-            self.log.exception("authentication.events: Cannot find onu serial number for this event", kafka_event=event)
-            raise Exception("authentication.events: Cannot find onu serial number for this event")
-
-        return onu_sn
-
-    def get_si_by_sn(self, serial_number):
-        try:
-            return AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
-        except IndexError:
-            self.log.exception("authentication.events: Cannot find hippie-oss service instance for this event", kafka_event=value)
-            raise Exception("authentication.events: Cannot find hippie-oss service instance for this event")
-
     def process_event(self, event):
         value = json.loads(event.value)
 
-        onu_sn = self.get_onu_sn(value)
-        si = self.get_si_by_sn(onu_sn)
+        onu_sn = AttHelpers.get_onu_sn(value)
+        si = AttHelpers.get_si_by_sn(onu_sn)
         if not si:
-            self.log.exception("authentication.events: Cannot find hippie-oss service instance for this event", kafka_event=value)
-            raise Exception("authentication.events: Cannot find hippie-oss service instance for this event")
+            self.log.exception("authentication.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
+            raise Exception("authentication.events: Cannot find att-workflow-driver service instance for this event")
 
         si.authentication_state = value["authenticationState"];
-        si.no_sync = True
-        si.save(update_fields=["authentication_state", "no_sync", "updated"], always_update_timestamp=True)
+        si.save(update_fields=["authentication_state", "updated"], always_update_timestamp=True)
