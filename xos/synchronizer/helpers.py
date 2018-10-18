@@ -81,3 +81,11 @@ class AttHelpers():
         except IndexError:
             log.exception("Cannot find att-workflow-driver service instance for this serial number", serial_number=serial_number)
             raise Exception("Cannot find att-workflow-driver service instance for this serial number %s", serial_number)
+
+    @staticmethod
+    def save_changed_fields(obj, always_update_timestamp=False):
+        if obj.has_changed:
+            update_fields = obj.changed_fields
+            if always_update_timestamp and "updated" not in update_fields:
+                update_fields.append("updated")
+            obj.save(update_fields=sorted(update_fields), always_update_timestamp=always_update_timestamp)
