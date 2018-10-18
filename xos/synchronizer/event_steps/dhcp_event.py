@@ -43,7 +43,7 @@ class SubscriberDhcpEventStep(EventStep):
         si.dhcp_state = value["messageType"];
         si.ip_address = value["ipAddress"];
         si.mac_address = value["macAddress"];
-        si.save(update_fields=["dhcp_state", "ip_address", "mac_address", "updated"], always_update_timestamp=True)
+        si.save_changed_fields(always_update_timestamp=True)
         # subscriber = RCORDSubscriber.objects.get(onu_device=onu_sn)
         #
         #

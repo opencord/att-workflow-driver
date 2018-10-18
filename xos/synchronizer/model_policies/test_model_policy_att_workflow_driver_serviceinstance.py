@@ -88,7 +88,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
             self.policy.update_onu("brcm1234", "DISABLED")
             self.assertEqual(onu.admin_state, "DISABLED")
-            onu_save.assert_called_with(always_update_timestamp=True)
+            onu_save.assert_called_with(always_update_timestamp=True, update_fields=['admin_state', 'serial_number', 'updated'])
 
 
     def test_enable_onu(self):
