@@ -81,3 +81,4 @@ class AttHelpers():
         except IndexError:
             log.exception("Cannot find att-workflow-driver service instance for this serial number", serial_number=serial_number)
             raise Exception("Cannot find att-workflow-driver service instance for this serial number %s", serial_number)
+

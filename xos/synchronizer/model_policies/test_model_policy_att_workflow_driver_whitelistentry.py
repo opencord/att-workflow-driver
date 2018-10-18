@@ -83,7 +83,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['no_sync', 'updated', 'onu_state', 'status_message', 'authentication_state'])
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'status_message', 'updated'])
 
             self.assertEqual("valid onu", si.status_message)
 
@@ -97,7 +97,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['no_sync', 'updated', 'onu_state', 'status_message', 'authentication_state'])
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'onu_state', 'serial_number', 'status_message', 'updated'])
 
             self.assertEqual("invalid onu", si.status_message)
 

@@ -17,6 +17,7 @@
 import json
 from synchronizers.new_base.eventstep import EventStep
 from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
+from helpers import AttHelpers
 
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
@@ -59,6 +60,6 @@ class ONUEventStep(EventStep):
             att_si.authentication_state = "AWAITING"
         else:
             self.log.warn("onu.events: Unkown status value: %s" % value["status"], value=value)
-        att_si.save(always_update_timestamp=True)
+        att_si.save_changed_fields(always_update_timestamp=True)
 
 
