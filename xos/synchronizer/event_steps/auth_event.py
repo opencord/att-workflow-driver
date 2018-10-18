@@ -38,4 +38,4 @@ class SubscriberAuthEventStep(EventStep):
             raise Exception("authentication.events: Cannot find att-workflow-driver service instance for this event")
 
         si.authentication_state = value["authenticationState"];
-        si.save(update_fields=["authentication_state", "updated"], always_update_timestamp=True)
+        si.save_changed_fields(always_update_timestamp=True)
