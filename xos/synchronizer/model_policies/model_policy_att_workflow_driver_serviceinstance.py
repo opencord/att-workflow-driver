@@ -54,7 +54,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         if subscriber:
             self.update_subscriber(subscriber, si)
 
-        si.save()
+        si.save_changed_fields()
 
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(si)
@@ -73,7 +73,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         else:
             self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
             onu.admin_state = admin_state
-            onu.save(always_update_timestamp=True)
+            onu.save_changed_fields(always_update_timestamp=True)
 
     def get_subscriber(self, serial_number):
         try:
@@ -109,7 +109,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             if si.ip_address and si.mac_address:
                 subscriber.ip_address = si.ip_address
                 subscriber.mac_address = si.mac_address
-            subscriber.save(always_update_timestamp=True)
+            subscriber.save_changed_fields(always_update_timestamp=True)
         else:
             self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
                               authentication_state=si.authentication_state, subscriber_status=subscriber.status)

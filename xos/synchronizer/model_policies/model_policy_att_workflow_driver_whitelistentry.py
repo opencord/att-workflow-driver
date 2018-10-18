@@ -41,7 +41,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
 
         self.logger.debug(
             "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si, onu_state=si.onu_state, authentication_state=si.authentication_state)
-        si.save(update_fields=["no_sync", "updated", "onu_state", "status_message", "authentication_state"], always_update_timestamp=True)
+        si.save_changed_fields(always_update_timestamp=True)
 
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
