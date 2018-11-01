@@ -15,7 +15,7 @@
 
 
 
-from synchronizers.new_base.modelaccessor import RCORDSubscriber, ONUDevice, model_accessor
+from synchronizers.new_base.modelaccessor import RCORDSubscriber, RCORDIpAddress, ONUDevice, model_accessor
 from synchronizers.new_base.policy import Policy
 
 import os
@@ -83,6 +83,25 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             self.logger.debug("MODEL_POLICY: subscriber does not exists for this SI, doing nothing", onu_device=serial_number)
             return None
 
+    def update_subscriber_ip(self, subscriber, ip):
+        # TODO check if the subscriber has an IP and update it,
+        # or create a new one
+        try:
+            ip = RCORDIpAddress.objects.filter(
+                subscriber_id=subscriber.id,
+                ip=ip
+            )[0]
+            self.logger.debug("MODEL_POLICY: found existing RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            ip.save_changed_fields()
+        except IndexError:
+            self.logger.debug("MODEL_POLICY: Creating new RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            ip = RCORDIpAddress(
+                subscriber_id=subscriber.id,
+                ip=ip,
+                description="DHCP Assigned IP Address"
+            )
+            ip.save()
+
     def update_subscriber(self, subscriber, si):
         cur_status = subscriber.status
         if si.authentication_state == "AWAITING":
@@ -107,7 +126,8 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
             self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
             if si.ip_address and si.mac_address:
-                subscriber.ip_address = si.ip_address
+                # subscriber.ip_address = si.ip_address
+                self.update_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = si.mac_address
             subscriber.save_changed_fields(always_update_timestamp=True)
         else:
