@@ -43,16 +43,5 @@ class SubscriberDhcpEventStep(EventStep):
         si.dhcp_state = value["messageType"];
         si.ip_address = value["ipAddress"];
         si.mac_address = value["macAddress"];
+
         si.save_changed_fields(always_update_timestamp=True)
-        # subscriber = RCORDSubscriber.objects.get(onu_device=onu_sn)
-        #
-        #
-        # # NOTE it will be better to update the SI and use the model policy to update the subscriber,
-        # # if this fails for any reason the event is lost
-        #
-        # if value["messageType"] == "DHCPACK":
-        #
-        #     # FIXME apparently it's always saving
-        #     subscriber.ip_address = value["ipAddress"]
-        #     subscriber.mac_address = value["macAddress"]
-        #     subscriber.save()

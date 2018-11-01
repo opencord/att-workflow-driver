@@ -240,22 +240,57 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.policy.update_subscriber(sub, self.si)
             sub_save.assert_not_called()
 
-    def test_update_subscriber_dhcp(self):
+    def test_update_subscriber_dhcp_with_exiting_ip(self):
         sub = RCORDSubscriber(
+            id=10,
+            onu_device="BRCM1234"
+        )
+
+        ip = RCORDIpAddress(
+            subscriber_id=sub.id,
+            ip='10.11.2.23'
+        )
+
+        self.si.dhcp_state = "DHCPACK"
+        self.si.ip_address = "10.11.2.23"
+        self.si.mac_address = "4321"
+
+        with patch.object(sub, "save") as sub_save, \
+            patch.object(RCORDIpAddress.objects, "get_items") as get_ips, \
+            patch.object(ip, "save_changed_fields") as ip_mock:
+
+            get_ips.return_value = [ip]
+            ip_mock.return_value = []
+
+            self.policy.update_subscriber(sub, self.si)
+            sub_save.assert_called()
+            self.assertEqual(sub.mac_address, self.si.mac_address)
+
+            ip_mock.assert_called_with()
+
+    def test_update_subscriber_dhcp_with_new_ip(self):
+        sub = RCORDSubscriber(
+            id=10,
             onu_device="BRCM1234"
         )
 
         self.si.dhcp_state = "DHCPACK"
-        self.si.ip_address = "1234"
+        self.si.ip_address = "10.11.2.23"
         self.si.mac_address = "4321"
 
-        with patch.object(sub, "save") as sub_save:
+        with patch.object(sub, "save") as sub_save, \
+            patch.object(RCORDIpAddress, "save", autospec=True) as ip_mock:
+
+            ip_mock.return_value = []
+
             self.policy.update_subscriber(sub, self.si)
             sub_save.assert_called()
             self.assertEqual(sub.mac_address, self.si.mac_address)
-            self.assertEqual(sub.ip_address, self.si.ip_address)
 
-
+            saved_ip = ip_mock.call_args[0][0]
+            self.assertEqual(saved_ip.ip, self.si.ip_address)
+            self.assertEqual(saved_ip.subscriber_id, sub.id)
+            self.assertEqual(saved_ip.description, "DHCP Assigned IP Address")
 
     def test_handle_update_subscriber(self):
         self.si.onu_state = "DISABLED"
