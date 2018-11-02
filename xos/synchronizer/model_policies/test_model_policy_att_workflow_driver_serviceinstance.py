@@ -300,10 +300,12 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         )
 
         with patch.object(self.policy, "get_subscriber") as get_subscriber, \
+            patch.object(self.policy, "update_onu") as update_onu, \
             patch.object(self.policy, "update_subscriber") as update_subscriber:
 
             get_subscriber.return_value = None
             self.policy.handle_update(self.si)
+            update_onu.assert_called_with(sub.onu_device, "DISABLED");
             self.assertEqual(update_subscriber.call_count, 0)
 
             get_subscriber.return_value = sub
