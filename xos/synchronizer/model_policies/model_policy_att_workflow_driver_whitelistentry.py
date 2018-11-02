@@ -60,7 +60,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
         whitelist.save(update_fields=["backend_need_delete_policy"])
 
     def handle_delete(self, whitelist):
-        self.logger.debug("MODEL_POLICY: handle_delete for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
+        self.logger.debug("MODEL_POLICY: handle_delete for AttWorkflowDriverWhiteListEntry", serial_number=whitelist.serial_number, pon_port=whitelist.pon_port_id, device=whitelist.device_id)
 
         # BUG: Sometimes the delete policy is not called, because the reaper deletes
 
