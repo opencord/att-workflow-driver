@@ -31,8 +31,8 @@ class SubscriberAuthEventStep(EventStep):
     def process_event(self, event):
         value = json.loads(event.value)
 
-        onu_sn = AttHelpers.get_onu_sn(value)
-        si = AttHelpers.get_si_by_sn(onu_sn)
+        onu_sn = AttHelpers.get_onu_sn(self.log, value)
+        si = AttHelpers.get_si_by_sn(self.log, onu_sn)
         if not si:
             self.log.exception("authentication.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find att-workflow-driver service instance for this event")
