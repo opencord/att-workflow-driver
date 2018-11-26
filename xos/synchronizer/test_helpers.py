@@ -49,6 +49,9 @@ class TestAttHelpers(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
+        from multistructlog import create_logger
+        self.log = create_logger(Config().get('logging'))
+
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
 
         build_mock_modelaccessor(xos_dir, services_dir, [
@@ -104,7 +107,7 @@ class TestAttHelpers(unittest.TestCase):
         with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_mock:
             whitelist_mock.return_value = []
 
-            [res, message] = self.helpers.validate_onu(self.att_si)
+            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU not found in whitelist")
@@ -116,7 +119,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.att_si)
+            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU activated in wrong location")
@@ -128,7 +131,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.att_si)
+            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU activated in wrong location")
@@ -140,7 +143,7 @@ class TestAttHelpers(unittest.TestCase):
             onu_mock.return_value = []
 
             with self.assertRaises(Exception) as e:
-                self.helpers.validate_onu(self.att_si)
+                self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertEqual(e.exception.message, "ONU device %s is not know to XOS yet" % self.att_si.serial_number)
 
@@ -150,7 +153,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.att_si)
+            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")
@@ -162,7 +165,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.att_si)
+            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
 
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")

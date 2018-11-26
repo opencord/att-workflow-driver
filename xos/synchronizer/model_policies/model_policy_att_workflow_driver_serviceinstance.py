@@ -58,7 +58,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         si.save_changed_fields()
 
     def validate_onu_state(self, si):
-        [valid, message] = AttHelpers.validate_onu(si)
+        [valid, message] = AttHelpers.validate_onu(self.logger, si)
         si.status_message = message
         if valid:
             si.onu_state = "ENABLED"

@@ -15,15 +15,9 @@
 from synchronizers.new_base.syncstep import DeferredException
 from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry, AttWorkflowDriverServiceInstance, ONUDevice, VOLTService, model_accessor
 
-from xosconfig import Config
-from multistructlog import create_logger
-
-log = create_logger(Config().get('logging'))
-
 class AttHelpers():
-
     @staticmethod
-    def validate_onu(att_si):
+    def validate_onu(log, att_si):
         """
         This method validate an ONU against the whitelist and set the appropriate state.
         It's expected that the deferred exception is managed in the caller method,
@@ -65,7 +59,7 @@ class AttHelpers():
         return [True, "ONU has been validated"]
 
     @staticmethod
-    def get_onu_sn(event):
+    def get_onu_sn(log, event):
         olt_service = VOLTService.objects.first()
         onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
         if not onu_sn or onu_sn is None:
@@ -75,7 +69,7 @@ class AttHelpers():
         return onu_sn
 
     @staticmethod
-    def get_si_by_sn(serial_number):
+    def get_si_by_sn(log, serial_number):
         try:
             return AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
         except IndexError:

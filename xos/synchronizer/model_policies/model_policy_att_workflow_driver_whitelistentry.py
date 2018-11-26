@@ -31,7 +31,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
         self.handle_update(whitelist)
 
     def validate_onu_state(self, si):
-        [valid, message] = AttHelpers.validate_onu(si)
+        [valid, message] = AttHelpers.validate_onu(self.logger, si)
         si.status_message = message
         if valid:
             si.onu_state = "ENABLED"
