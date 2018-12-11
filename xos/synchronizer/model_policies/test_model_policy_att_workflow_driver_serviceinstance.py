@@ -251,6 +251,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             ip='10.11.2.23'
         )
 
+        self.si.authentication_state = "APPROVED"
         self.si.dhcp_state = "DHCPACK"
         self.si.ip_address = "10.11.2.23"
         self.si.mac_address = "4321"
@@ -274,6 +275,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             onu_device="BRCM1234"
         )
 
+        self.si.authentication_state = "APPROVED"
         self.si.dhcp_state = "DHCPACK"
         self.si.ip_address = "10.11.2.23"
         self.si.mac_address = "4321"

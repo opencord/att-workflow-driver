@@ -55,6 +55,11 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         if subscriber:
             self.update_subscriber(subscriber, si)
 
+        if si.authentication_state in ["AWAITING", "REQUESTED", "STARTED"]:
+            si.ip_address = ""
+            si.mac_address = ""
+            si.dhcp_state = ""
+
         si.save_changed_fields()
 
     def validate_onu_state(self, si):
@@ -103,6 +108,17 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             )
             ip.save()
 
+    def delete_subscriber_ip(self, subscriber, ip):
+        try:
+            ip = RCORDIpAddress.objects.filter(
+                subscriber_id=subscriber.id,
+                ip=ip
+            )[0]
+            self.logger.debug("MODEL_POLICY: delete RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            ip.delete()
+        except:
+            self.logger.warning("MODEL_POLICY: no RCORDIpAddress object found, cannot delete", ip=ip)
+
     def update_subscriber(self, subscriber, si):
         cur_status = subscriber.status
         if si.authentication_state == "AWAITING":
@@ -126,8 +142,10 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # - we get a DHCPACK event
         if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
             self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
-            if si.ip_address and si.mac_address:
-                # subscriber.ip_address = si.ip_address
+            if subscriber.status == "awaiting-auth":
+                self.delete_subscriber_ip(subscriber, si.ip_address)
+                subscriber.mac_address = ""
+            elif si.ip_address and si.mac_address:
                 self.update_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = si.mac_address
             subscriber.save_changed_fields(always_update_timestamp=True)
