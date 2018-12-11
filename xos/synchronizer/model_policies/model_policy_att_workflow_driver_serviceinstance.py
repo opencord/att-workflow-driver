@@ -39,6 +39,11 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     def handle_update(self, si):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s " % (si.id), onu_state=si.onu_state, authentication_state=si.authentication_state)
 
+        if si.authentication_state in ["AWAITING", "REQUESTED", "STARTED"]:
+            si.ip_address = ""
+            si.mac_address = ""
+            si.dhcp_state = ""
+
         # validating ONU
         if si.onu_state == "AWAITING" or si.onu_state == "ENABLED":
             # we validate the ONU state only if it is enabled or awaiting,
@@ -126,8 +131,10 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # - we get a DHCPACK event
         if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
             self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
-            if si.ip_address and si.mac_address:
-                # subscriber.ip_address = si.ip_address
+            if subscriber.status == "awaiting-auth":
+                # Delete subscriber IP?
+                subscriber.mac_address = ""
+            elif si.ip_address and si.mac_address:
                 self.update_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = si.mac_address
             subscriber.save_changed_fields(always_update_timestamp=True)
