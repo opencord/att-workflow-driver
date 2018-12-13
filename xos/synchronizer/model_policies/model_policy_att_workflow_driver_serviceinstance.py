@@ -58,7 +58,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         if si.authentication_state in ["AWAITING", "REQUESTED", "STARTED"]:
             si.ip_address = ""
             si.mac_address = ""
-            si.dhcp_state = ""
+            si.dhcp_state = "AWAITING"
 
         si.save_changed_fields()
 
