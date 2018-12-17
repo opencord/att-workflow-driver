@@ -121,21 +121,22 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def update_subscriber(self, subscriber, si):
         cur_status = subscriber.status
-        if si.authentication_state == "AWAITING":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Awaiting Authentication"
-        elif si.authentication_state == "REQUESTED":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Authentication requested"
-        elif si.authentication_state == "STARTED":
-            subscriber.status = "awaiting-auth"
-            si.status_message += " - Authentication started"
-        elif si.authentication_state == "APPROVED":
-            subscriber.status = "enabled"
-            si.status_message += " - Authentication succeded"
-        elif si.authentication_state == "DENIED":
-            subscriber.status = "auth-failed"
-            si.status_message += " - Authentication denied"
+        if subscriber.status != "disabled":
+            if si.authentication_state == "AWAITING":
+                subscriber.status = "awaiting-auth"
+                si.status_message += " - Awaiting Authentication"
+            elif si.authentication_state == "REQUESTED":
+                subscriber.status = "awaiting-auth"
+                si.status_message += " - Authentication requested"
+            elif si.authentication_state == "STARTED":
+                subscriber.status = "awaiting-auth"
+                si.status_message += " - Authentication started"
+            elif si.authentication_state == "APPROVED":
+                subscriber.status = "enabled"
+                si.status_message += " - Authentication succeded"
+            elif si.authentication_state == "DENIED":
+                subscriber.status = "auth-failed"
+                si.status_message += " - Authentication denied"
 
         # NOTE we save the subscriber only if:
         # - the status has changed
