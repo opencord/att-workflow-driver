@@ -11,14 +11,14 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
     option verbose_name = "AttWorkflowDriver Service Instance";
 
     required string serial_number = 2 [max_length = 254, db_index = False, tosca_key=True, unique = True];
-    required string authentication_state = 3 [default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('STARTED', 'Started'), ('REQUESTED', 'Requested'), ('APPROVED', 'Approved'), ('DENIED', 'Denied'), )", max_length = 50, db_index = False];
+    required string authentication_state = 3 [default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('STARTED', 'Started'), ('REQUESTED', 'Requested'), ('APPROVED', 'Approved'), ('DENIED', 'Denied'), )", max_length = 50, db_index = False, feedback_state = True];
     required string of_dpid = 4 [max_length = 254, db_index = False];
     required int32 uni_port_id = 5 [db_index = False];
-    required string onu_state = 6 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))"];
+    required string onu_state = 6 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))", feedback_state = True];
     optional string status_message = 7 [max_length = 254, db_index = False, default = ""];
-    required string dhcp_state = 8 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('DHCPDISCOVER', 'DHCPDISCOVER'), ('DHCPACK', 'DHCPACK'), ('DHCPREQUEST', 'DHCPREQUEST'))"];
-    optional string ip_address = 9 [max_length = 20, db_index = False];
-    optional string mac_address = 10 [max_length = 20, db_index = False];
+    required string dhcp_state = 8 [max_length = 254, db_index = False, default = "AWAITING", choices = "(('AWAITING', 'Awaiting'), ('DHCPDISCOVER', 'DHCPDISCOVER'), ('DHCPACK', 'DHCPACK'), ('DHCPREQUEST', 'DHCPREQUEST'))", feedback_state = True];
+    optional string ip_address = 9 [max_length = 20, db_index = False, feedback_state = True];
+    optional string mac_address = 10 [max_length = 20, db_index = False, feedback_state = True];
 }
 
 message AttWorkflowDriverWhiteListEntry (XOSBase) {

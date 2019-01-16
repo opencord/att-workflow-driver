@@ -140,7 +140,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
             self.si.onu_state = "DISABLED"
             self.policy.handle_update(self.si)
-            self.assertEqual(validate_onu_state.call_count, 2)
+            validate_onu_state.assert_called_with(self.si)
+
 
     def test_get_subscriber(self):
 
@@ -172,7 +173,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.authentication_state = "AWAITING"
             self.policy.update_subscriber(sub, self.si)
             self.assertEqual(sub.status, "awaiting-auth")
-            self.assertIn("Awaiting Authentication", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
             sub.status = None
@@ -180,7 +180,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.authentication_state = "REQUESTED"
             self.policy.update_subscriber(sub, self.si)
             self.assertEqual(sub.status, "awaiting-auth")
-            self.assertIn("Authentication requested", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
             sub.status = None
@@ -188,7 +187,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.authentication_state = "STARTED"
             self.policy.update_subscriber(sub, self.si)
             self.assertEqual(sub.status, "awaiting-auth")
-            self.assertIn("Authentication started", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
             sub.status = None
@@ -196,7 +194,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.authentication_state = "APPROVED"
             self.policy.update_subscriber(sub, self.si)
             self.assertEqual(sub.status, "enabled")
-            self.assertIn("Authentication succeded", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
             sub.status = None
@@ -204,7 +201,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.authentication_state = "DENIED"
             self.policy.update_subscriber(sub, self.si)
             self.assertEqual(sub.status, "auth-failed")
-            self.assertIn("Authentication denied", self.si.status_message)
             sub_save.assert_called()
             sub_save.reset_mock()
             sub.status = None
