@@ -57,8 +57,8 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         si.save_changed_fields()
 
     def process_onu_state(self, si):
+        [valid, message] = AttHelpers.validate_onu(self.logger, si)
         if si.onu_state == "AWAITING" or si.onu_state == "ENABLED":
-            [valid, message] = AttHelpers.validate_onu(self.logger, si)
             si.status_message = message
             if valid:
                 si.onu_state = "ENABLED"
@@ -66,8 +66,11 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             else:
                 si.onu_state = "DISABLED"
                 self.update_onu(si.serial_number, "DISABLED")
-        else:
-            si.status_message = "ONU has been disabled"
+        else: # DISABLED
+            if not valid:
+                si.status_message = message
+            else:
+                si.status_message = "ONU has been disabled"
             self.update_onu(si.serial_number, "DISABLED")
 
     def process_auth_state(self, si):
