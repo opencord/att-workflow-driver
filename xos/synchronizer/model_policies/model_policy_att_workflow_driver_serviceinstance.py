@@ -15,8 +15,8 @@
 
 
 
-from synchronizers.new_base.modelaccessor import RCORDSubscriber, RCORDIpAddress, ONUDevice, model_accessor
-from synchronizers.new_base.policy import Policy
+from xossynchronizer.modelaccessor import RCORDSubscriber, RCORDIpAddress, ONUDevice, model_accessor
+from xossynchronizer.model_policies.policy import Policy
 
 import os
 import sys
