@@ -20,38 +20,29 @@ from mock import patch, call, Mock, PropertyMock
 import os, sys
 
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-service_dir=os.path.join(test_path, "../../../..")
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
-
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 
 class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
     def setUp(self):
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         config = os.path.join(test_path, "../test_config.yaml")
         from xosconfig import Config
         Config.clear()
         Config.init(config, 'synchronizer-config-schema.yaml')
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [
-            get_models_fn("att-workflow-driver", "att-workflow-driver.xproto"),
-            get_models_fn("olt-service", "volt.xproto"),
-            get_models_fn("../profiles/rcord", "rcord.xproto")
-        ])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("att-workflow-driver", "att-workflow-driver.xproto"),
+                                              ("olt-service", "volt.xproto"),
+                                              ("../profiles/rcord", "rcord.xproto")])
 
-        import synchronizers.new_base.modelaccessor
-        from model_policy_att_workflow_driver_whitelistentry import AttWorkflowDriverWhiteListEntryPolicy, model_accessor
+        import xossynchronizer.modelaccessor
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        from model_policy_att_workflow_driver_whitelistentry import AttWorkflowDriverWhiteListEntryPolicy, AttHelpers
+        self.AttHelpers = AttHelpers
 
         from mock_modelaccessor import MockObjectList
         self.MockObjectList = MockObjectList
@@ -64,7 +55,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
 
-        self.policy = AttWorkflowDriverWhiteListEntryPolicy()
+        self.policy = AttWorkflowDriverWhiteListEntryPolicy(model_accessor=model_accessor)
 
         self.service = AttWorkflowDriverService()
 
@@ -74,9 +65,8 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
         self.service = None
 
     def test_enable_onu(self):
-        from helpers import AttHelpers
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
-        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+        with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
             patch.object(si, "save") as save_si:
             validate_onu.return_value = [True, "valid onu"]
 
@@ -88,9 +78,8 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             self.assertEqual("valid onu", si.status_message)
 
     def test_disable_onu(self):
-        from helpers import AttHelpers
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
-        with patch.object(AttHelpers, "validate_onu") as validate_onu, \
+        with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
             patch.object(si, "save") as save_si:
             validate_onu.return_value = [False, "invalid onu"]
 
