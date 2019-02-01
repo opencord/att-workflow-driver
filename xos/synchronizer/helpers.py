@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from synchronizers.new_base.syncstep import DeferredException
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverWhiteListEntry, AttWorkflowDriverServiceInstance, ONUDevice, VOLTService, model_accessor
+from xossynchronizer.steps.syncstep import DeferredException
 
 class AttHelpers():
     @staticmethod
-    def validate_onu(log, att_si):
+    def validate_onu(model_accessor, log, att_si):
         """
         This method validate an ONU against the whitelist and set the appropriate state.
         It's expected that the deferred exception is managed in the caller method,
@@ -30,7 +29,7 @@ class AttHelpers():
         oss_service = att_si.owner.leaf_model
 
         # See if there is a matching entry in the whitelist.
-        matching_entries = AttWorkflowDriverWhiteListEntry.objects.filter(
+        matching_entries = model_accessor.AttWorkflowDriverWhiteListEntry.objects.filter(
             owner_id=oss_service.id,
         )
         matching_entries = [e for e in matching_entries if e.serial_number.lower() == att_si.serial_number.lower()]
@@ -41,7 +40,7 @@ class AttHelpers():
 
         whitelisted = matching_entries[0]
         try:
-            pon_port = ONUDevice.objects.get(serial_number=att_si.serial_number).pon_port
+            pon_port = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number).pon_port
         except IndexError:
             raise DeferredException("ONU device %s is not know to XOS yet" % att_si.serial_number)
 
@@ -59,8 +58,8 @@ class AttHelpers():
         return [True, "ONU has been validated"]
 
     @staticmethod
-    def get_onu_sn(log, event):
-        olt_service = VOLTService.objects.first()
+    def get_onu_sn(model_accessor, log, event):
+        olt_service = model_accessor.VOLTService.objects.first()
         onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
         if not onu_sn or onu_sn is None:
             log.exception("Cannot find onu serial number for this event", kafka_event=event)
@@ -69,9 +68,9 @@ class AttHelpers():
         return onu_sn
 
     @staticmethod
-    def get_si_by_sn(log, serial_number):
+    def get_si_by_sn(model_accessor, log, serial_number):
         try:
-            return AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
+            return model_accessor.AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
         except IndexError:
             log.exception("Cannot find att-workflow-driver service instance for this serial number", serial_number=serial_number)
             raise Exception("Cannot find att-workflow-driver service instance for this serial number %s", serial_number)

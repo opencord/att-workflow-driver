@@ -14,8 +14,7 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverServiceInstance, AttWorkflowDriverWhiteListEntry, model_accessor
-from synchronizers.new_base.policy import Policy
+from xossynchronizer.model_policies.policy import Policy
 import os
 import sys
 
@@ -31,7 +30,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
         self.handle_update(whitelist)
 
     def validate_onu_state(self, si):
-        [valid, message] = AttHelpers.validate_onu(self.logger, si)
+        [valid, message] = AttHelpers.validate_onu(self.model_accessor, self.logger, si)
         si.status_message = message
         if valid:
             si.onu_state = "ENABLED"
@@ -46,7 +45,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
 
-        sis = AttWorkflowDriverServiceInstance.objects.all()
+        sis = self.model_accessor.AttWorkflowDriverServiceInstance.objects.all()
 
         for si in sis:
 
@@ -66,7 +65,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
 
         assert(whitelist.owner)
 
-        sis = AttWorkflowDriverServiceInstance.objects.all()
+        sis = self.model_accessor.AttWorkflowDriverServiceInstance.objects.all()
         sis = [si for si in sis if si.serial_number.lower() == whitelist.serial_number.lower()]
 
         for si in sis:

@@ -15,8 +15,7 @@
 
 
 
-from synchronizers.new_base.modelaccessor import RCORDSubscriber, RCORDIpAddress, ONUDevice, model_accessor
-from synchronizers.new_base.policy import Policy
+from xossynchronizer.model_policies.policy import Policy
 
 import os
 import sys
@@ -57,7 +56,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         si.save_changed_fields()
 
     def process_onu_state(self, si):
-        [valid, message] = AttHelpers.validate_onu(self.logger, si)
+        [valid, message] = AttHelpers.validate_onu(self.model_accessor, self.logger, si)
         if si.onu_state == "AWAITING" or si.onu_state == "ENABLED":
             si.status_message = message
             if valid:
@@ -111,7 +110,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
 
     def update_onu(self, serial_number, admin_state):
-        onu = [onu for onu in ONUDevice.objects.all() if onu.serial_number.lower() == serial_number.lower()][0]
+        onu = [onu for onu in self.model_accessor.ONUDevice.objects.all() if onu.serial_number.lower() == serial_number.lower()][0]
         if onu.admin_state == admin_state:
             self.logger.debug("MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" % (serial_number, admin_state))
         else:
@@ -121,7 +120,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def get_subscriber(self, serial_number):
         try:
-            return [s for s in RCORDSubscriber.objects.all() if s.onu_device.lower() == serial_number.lower()][0]
+            return [s for s in self.model_accessor.RCORDSubscriber.objects.all() if s.onu_device.lower() == serial_number.lower()][0]
         except IndexError:
             # If the subscriber doesn't exist we don't do anything
             self.logger.debug("MODEL_POLICY: subscriber does not exists for this SI, doing nothing", onu_device=serial_number)
@@ -131,7 +130,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # TODO check if the subscriber has an IP and update it,
         # or create a new one
         try:
-            ip = RCORDIpAddress.objects.filter(
+            ip = self.model_accessor.RCORDIpAddress.objects.filter(
                 subscriber_id=subscriber.id,
                 ip=ip
             )[0]
@@ -139,7 +138,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             ip.save_changed_fields()
         except IndexError:
             self.logger.debug("MODEL_POLICY: Creating new RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
-            ip = RCORDIpAddress(
+            ip = self.model_accessor.RCORDIpAddress(
                 subscriber_id=subscriber.id,
                 ip=ip,
                 description="DHCP Assigned IP Address"
@@ -148,7 +147,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def delete_subscriber_ip(self, subscriber, ip):
         try:
-            ip = RCORDIpAddress.objects.filter(
+            ip = self.model_accessor.RCORDIpAddress.objects.filter(
                 subscriber_id=subscriber.id,
                 ip=ip
             )[0]

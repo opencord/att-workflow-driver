@@ -15,8 +15,7 @@
 
 
 import json
-from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
+from xossynchronizer.event_steps.eventstep import EventStep
 
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
@@ -29,18 +28,18 @@ class ONUEventStep(EventStep):
 
     def get_att_si(self, event):
         try:
-            att_si = AttWorkflowDriverServiceInstance.objects.get(serial_number=event["serial_number"])
+            att_si = self.model_accessor.AttWorkflowDriverServiceInstance.objects.get(serial_number=event["serial_number"])
             att_si.no_sync = False;
             att_si.uni_port_id = event["uni_port_id"]
             att_si.of_dpid = event["of_dpid"]
             self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
             # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
-            att_si = AttWorkflowDriverServiceInstance(
+            att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
                 serial_number=event["serial_number"],
                 of_dpid=event["of_dpid"],
                 uni_port_id=event["uni_port_id"],
-                owner=AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
+                owner=self.model_accessor.AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
             )
             self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
         return att_si
