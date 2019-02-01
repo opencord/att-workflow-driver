@@ -17,8 +17,7 @@ import json
 import time
 import os
 import sys
-from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import model_accessor
+from xossynchronizer.event_steps.eventstep import EventStep
 from helpers import AttHelpers
 
 class SubscriberAuthEventStep(EventStep):
@@ -31,8 +30,8 @@ class SubscriberAuthEventStep(EventStep):
     def process_event(self, event):
         value = json.loads(event.value)
 
-        onu_sn = AttHelpers.get_onu_sn(self.log, value)
-        si = AttHelpers.get_si_by_sn(self.log, onu_sn)
+        onu_sn = AttHelpers.get_onu_sn(self.model_accessor, self.log, value)
+        si = AttHelpers.get_si_by_sn(self.model_accessor, self.log, onu_sn)
         if not si:
             self.log.exception("authentication.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find att-workflow-driver service instance for this event")

@@ -18,29 +18,14 @@ import json
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
-# END Hack to load synchronizer framework
 
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestAttHelpers(unittest.TestCase):
 
     def setUp(self):
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -52,21 +37,25 @@ class TestAttHelpers(unittest.TestCase):
         from multistructlog import create_logger
         self.log = create_logger(Config().get('logging'))
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("att-workflow-driver", "att-workflow-driver.xproto"),
+                                              ("olt-service", "volt.xproto"),
+                                              ("../profiles/rcord", "rcord.xproto")])
 
-        build_mock_modelaccessor(xos_dir, services_dir, [
-            get_models_fn("att-workflow-driver", "att-workflow-driver.xproto"),
-            get_models_fn("olt-service", "volt.xproto"),
-            get_models_fn("../profiles/rcord", "rcord.xproto")
-        ])
-        import synchronizers.new_base.modelaccessor
-        from helpers import AttHelpers, model_accessor
+        import xossynchronizer.modelaccessor
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        from helpers import AttHelpers
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
         self.helpers = AttHelpers
+        self.model_accessor = model_accessor
 
         self._volt = VOLTService()
         self._volt.id = 1
@@ -107,7 +96,7 @@ class TestAttHelpers(unittest.TestCase):
         with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_mock:
             whitelist_mock.return_value = []
 
-            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU not found in whitelist")
@@ -119,7 +108,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU activated in wrong location")
@@ -131,7 +120,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertFalse(res)
             self.assertEqual(message, "ONU activated in wrong location")
@@ -143,7 +132,7 @@ class TestAttHelpers(unittest.TestCase):
             onu_mock.return_value = []
 
             with self.assertRaises(Exception) as e:
-                self.helpers.validate_onu(self.log, self.att_si)
+                self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertEqual(e.exception.message, "ONU device %s is not know to XOS yet" % self.att_si.serial_number)
 
@@ -153,7 +142,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")
@@ -165,7 +154,7 @@ class TestAttHelpers(unittest.TestCase):
             whitelist_mock.return_value = [self.whitelist_entry]
             onu_mock.return_value = [self.onu]
 
-            [res, message] = self.helpers.validate_onu(self.log, self.att_si)
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
 
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")

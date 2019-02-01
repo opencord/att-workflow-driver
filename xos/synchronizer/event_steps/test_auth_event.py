@@ -18,34 +18,13 @@ import json
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-service_dir=os.path.join(test_path, "../../../..")
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestSubscriberAuthEvent(unittest.TestCase):
 
     def setUp(self):
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -56,24 +35,27 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         log = create_logger(Config().get('logging'))
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("att-workflow-driver", "att-workflow-driver.xproto"),
+                                              ("olt-service", "volt.xproto"),
+                                              ("../profiles/rcord", "rcord.xproto")])
 
-        build_mock_modelaccessor(xos_dir, services_dir, [
-            get_models_fn("att-workflow-driver", "att-workflow-driver.xproto"),
-            get_models_fn("olt-service", "volt.xproto"),
-            get_models_fn("../profiles/rcord", "rcord.xproto")
-        ])
-        import synchronizers.new_base.modelaccessor
-        from auth_event import SubscriberAuthEventStep, model_accessor
+        import xossynchronizer.modelaccessor
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        from auth_event import SubscriberAuthEventStep
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
+        self.model_accessor = model_accessor
         self.log = log
 
-        self.event_step = SubscriberAuthEventStep(self.log)
+        self.event_step = SubscriberAuthEventStep(model_accessor=self.model_accessor, log=self.log)
 
         self.event = Mock()
 
@@ -109,3 +91,7 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
             self.hippie_si.save.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'serial_number', 'updated'])
             self.assertEqual(self.hippie_si.authentication_state, 'APPROVED')
+
+if __name__ == '__main__':
+    sys.path.append("..") # for import of helpers.py
+    unittest.main()
