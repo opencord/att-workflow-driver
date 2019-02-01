@@ -17,8 +17,8 @@ import json
 import time
 import os
 import sys
-from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import model_accessor
+from xossynchronizer.event_steps.eventstep import EventStep
+from xossynchronizer.modelaccessor import model_accessor
 from helpers import AttHelpers
 
 class SubscriberAuthEventStep(EventStep):

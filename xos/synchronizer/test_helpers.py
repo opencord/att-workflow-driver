@@ -18,29 +18,14 @@ import json
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
-# END Hack to load synchronizer framework
 
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestAttHelpers(unittest.TestCase):
 
     def setUp(self):
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -52,14 +37,17 @@ class TestAttHelpers(unittest.TestCase):
         from multistructlog import create_logger
         self.log = create_logger(Config().get('logging'))
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("att-workflow-driver", "att-workflow-driver.xproto"),
+                                              ("olt-service", "volt.xproto"),
+                                              ("../profiles/rcord", "rcord.xproto")])
 
-        build_mock_modelaccessor(xos_dir, services_dir, [
-            get_models_fn("att-workflow-driver", "att-workflow-driver.xproto"),
-            get_models_fn("olt-service", "volt.xproto"),
-            get_models_fn("../profiles/rcord", "rcord.xproto")
-        ])
-        import synchronizers.new_base.modelaccessor
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+
         from helpers import AttHelpers, model_accessor
 
         # import all class names to globals

@@ -15,8 +15,8 @@
 
 
 import json
-from synchronizers.new_base.eventstep import EventStep
-from synchronizers.new_base.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
+from xossynchronizer.event_steps.eventstep import EventStep
+from xossynchronizer.modelaccessor import AttWorkflowDriverService, AttWorkflowDriverServiceInstance, model_accessor
 
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
