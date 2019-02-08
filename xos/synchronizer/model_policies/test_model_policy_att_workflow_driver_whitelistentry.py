@@ -73,9 +73,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'status_message', 'updated'])
-
-            self.assertEqual("valid onu", si.status_message)
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'updated'])
 
     def test_disable_onu(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
@@ -86,9 +84,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'onu_state', 'serial_number', 'status_message', 'updated'])
-
-            self.assertEqual("invalid onu", si.status_message)
+            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'updated'])
 
     def test_whitelist_update(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
@@ -103,7 +99,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
             validate_onu_state.assert_called_with(si)
             self.assertTrue(wle.backend_need_delete_policy)
-            wle_save.assert_called_with(update_fields=["backend_need_delete_policy"])
+            wle_save.assert_called_with(always_update_timestamp=False, update_fields=['backend_need_delete_policy', 'owner', 'serial_number'])
 
     def test_whitelist_delete(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
@@ -117,7 +113,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
             validate_onu_state.assert_called_with(si)
             self.assertTrue(wle.backend_need_reap)
-            wle_save.assert_called_with(update_fields=["backend_need_reap"])
+            wle_save.assert_called_with(always_update_timestamp=False, update_fields=['backend_need_reap', 'owner', 'serial_number'])
 if __name__ == '__main__':
     unittest.main()
 

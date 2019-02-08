@@ -72,6 +72,12 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
                 si.status_message = "ONU has been disabled"
             self.update_onu(si.serial_number, "DISABLED")
 
+    # If the ONU has been disabled then we force re-authentication when it
+    # is re-enabled.
+    # Setting si.authentication_state = AWAITING:
+    #   -> subscriber status = "awaiting_auth"
+    #   -> service chain deleted
+    #   -> need authentication to restore connectivity after ONU enabled
     def process_auth_state(self, si):
         auth_msgs = {
             "AWAITING": " - Awaiting Authentication",
@@ -85,6 +91,16 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         else:
             si.status_message += auth_msgs[si.authentication_state]
 
+    # The DhcpL2Relay ONOS app generates events that update the fields below.
+    # It only sends events when it processes DHCP packets.  It keeps no internal state.
+    # We reset dhcp_state when:
+    # si.authentication_state in ["AWAITING", "REQUESTED", "STARTED"]
+    #   -> subscriber status = "awaiting_auth"
+    #   -> service chain not present
+    #   -> subscriber's OLT flow rules, xconnect not present
+    #   -> DHCP packets won't go through
+    # Note, however, that the DHCP state at the endpoints is not changed.
+    # A previously issued DHCP lease may still be valid.
     def process_dhcp_state(self, si):
         if si.authentication_state in ["AWAITING", "REQUESTED", "STARTED"]:
             si.ip_address = ""

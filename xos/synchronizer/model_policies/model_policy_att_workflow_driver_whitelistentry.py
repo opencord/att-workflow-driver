@@ -29,14 +29,14 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def handle_create(self, whitelist):
         self.handle_update(whitelist)
 
+    # Update the SI if the onu_state has changed.
+    # The SI model policy will take care of updating other state.
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(self.model_accessor, self.logger, si)
-        si.status_message = message
         if valid:
             si.onu_state = "ENABLED"
         else:
             si.onu_state = "DISABLED"
-            si.authentication_state = "AWAITING"
 
         self.logger.debug(
             "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si, onu_state=si.onu_state, authentication_state=si.authentication_state)
@@ -56,7 +56,7 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
             self.validate_onu_state(si)
 
         whitelist.backend_need_delete_policy=True
-        whitelist.save(update_fields=["backend_need_delete_policy"])
+        whitelist.save_changed_fields()
 
     def handle_delete(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_delete for AttWorkflowDriverWhiteListEntry", serial_number=whitelist.serial_number, pon_port=whitelist.pon_port_id, device=whitelist.device_id)
@@ -72,4 +72,4 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
             self.validate_onu_state(si)
 
         whitelist.backend_need_reap=True
-        whitelist.save(update_fields=["backend_need_reap"])
+        whitelist.save_changed_fields()
