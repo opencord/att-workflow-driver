@@ -36,7 +36,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
         mock_modelaccessor_config(test_path, [("att-workflow-driver", "att-workflow-driver.xproto"),
                                               ("olt-service", "volt.xproto"),
-                                              ("../profiles/rcord", "rcord.xproto")])
+                                              ("rcord", "rcord.xproto")])
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
