@@ -34,14 +34,19 @@ class ONUEventStep(EventStep):
             att_si.of_dpid = event["of_dpid"]
             self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
-            # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
-            att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
-                serial_number=event["serial_number"],
-                of_dpid=event["of_dpid"],
-                uni_port_id=event["uni_port_id"],
-                owner=self.model_accessor.AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
-            )
-            self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
+
+            if event["status"] == "disabled":
+                att_si = None
+                self.log.debug("onu.events: Not creating AttWorkflowDriverServiceInstance as status=disabled", event=event)
+            else:
+                # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
+                att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
+                    serial_number=event["serial_number"],
+                    of_dpid=event["of_dpid"],
+                    uni_port_id=event["uni_port_id"],
+                    owner=self.model_accessor.AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
+                )
+                self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
         return att_si
 
     def process_event(self, event):
@@ -49,6 +54,14 @@ class ONUEventStep(EventStep):
         self.log.info("onu.events: received event", value=value)
 
         att_si = self.get_att_si(value)
+
+        if not att_si:
+            # NOTE sometimes ONOS mistakenly send this kind of messages (if you remove and provision the OLT)
+            # so we'll need to ignore them otherwise the ONU will be disabled
+            self.log.info(
+                "onu.events: Ignoring event as AttWorkflowDriverServiceInstance was not present and status=disabled")
+            return
+
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
             att_si.onu_state = "ENABLED"
@@ -58,6 +71,7 @@ class ONUEventStep(EventStep):
             att_si.authentication_state = "AWAITING"
         else:
             self.log.warn("onu.events: Unkown status value: %s" % value["status"], value=value)
+
         att_si.save_changed_fields(always_update_timestamp=True)
 
 
