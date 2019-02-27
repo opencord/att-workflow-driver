@@ -123,11 +123,17 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         self.event.value = json.dumps(self.event_dict)
 
+        si = AttWorkflowDriverServiceInstance(
+            serial_number=self.event_dict["serial_number"],
+            of_dpid="foo",
+            uni_port_id="foo"
+        )
+
         with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
             patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
             patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
-            att_si_mock.return_value = []
+            att_si_mock.return_value = [si]
             service_mock.return_value = [self.att]
 
             self.event_step.process_event(self.event)
@@ -140,6 +146,25 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
             self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
             self.assertEqual(att_si.onu_state, "DISABLED")
+
+    def test_ignore_disable_event_for_not_existing_onus(self):
+        self.event_dict = {
+            'status': 'disabled',
+            'serial_number': 'BRCM1234',
+            'of_dpid': 'of:109299321',
+            'uni_port_id': 16
+        }
+        self.event.value = json.dumps(self.event_dict)
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock, \
+                patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
+                patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
+            att_si_mock.return_value = []
+            service_mock.return_value = [self.att]
+
+            self.event_step.process_event(self.event)
+
+            self.assertEqual(mock_save.call_count, 0)
 
 if __name__ == '__main__':
     sys.path.append("..")  # for import of helpers.py
