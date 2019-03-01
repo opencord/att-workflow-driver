@@ -123,23 +123,12 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         self.event.value = json.dumps(self.event_dict)
 
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
-            patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
-            patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
-
-            att_si_mock.return_value = []
-            service_mock.return_value = [self.att]
+        with patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
             self.event_step.process_event(self.event)
 
-            att_si = mock_save.call_args[0][0]
-
-            self.assertEqual(mock_save.call_count, 1)
-
-            self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
-            self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
-            self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
-            self.assertEqual(att_si.onu_state, "DISABLED")
+            self.assertEqual(mock_save.call_count, 0)
+            
 
 if __name__ == '__main__':
     sys.path.append("..")  # for import of helpers.py
