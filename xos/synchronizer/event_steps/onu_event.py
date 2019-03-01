@@ -48,16 +48,14 @@ class ONUEventStep(EventStep):
         value = json.loads(event.value)
         self.log.info("onu.events: received event", value=value)
 
-        att_si = self.get_att_si(value)
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
+            att_si = self.get_att_si(value)
             att_si.onu_state = "ENABLED"
+            att_si.save_changed_fields(always_update_timestamp=True)
         elif value["status"] == "disabled":
-            self.log.info("onu.events: disabled onu", value=value)
-            att_si.onu_state = "DISABLED"
-            att_si.authentication_state = "AWAITING"
+            self.log.info("onu.events: disabled onu, not taking any action", value=value)
+            return
         else:
-            self.log.warn("onu.events: Unkown status value: %s" % value["status"], value=value)
-        att_si.save_changed_fields(always_update_timestamp=True)
-
-
+            self.log.warn("onu.events: Unknown status value: %s" % value["status"], value=value)
+            return
