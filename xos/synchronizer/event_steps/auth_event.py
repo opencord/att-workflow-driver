@@ -36,5 +36,7 @@ class SubscriberAuthEventStep(EventStep):
             self.log.exception("authentication.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
             raise Exception("authentication.events: Cannot find att-workflow-driver service instance for this event")
 
+        self.log.info("authentication.events: Got event for subscriber", event_value=value, onu_sn=onu_sn, si=si)
+
         si.authentication_state = value["authenticationState"];
         si.save_changed_fields(always_update_timestamp=True)
