@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1e117e4_d0e626fc",
+        "filename": "xos/synchronizer/event_steps/onu_event.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2019-03-01T20:01:59Z",
+      "side": 1,
+      "message": "spotted an unrelated typo",
+      "range": {
+        "startLine": 59,
+        "startChar": 39,
+        "endLine": 59,
+        "endChar": 45
+      },
+      "revId": "84bc7d6a8756f5b05324de89315b4879254ec0ed",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
