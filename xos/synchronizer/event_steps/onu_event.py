@@ -30,18 +30,18 @@ class ONUEventStep(EventStep):
     def get_att_si(self, event):
         try:
             att_si = self.model_accessor.AttWorkflowDriverServiceInstance.objects.get(
-                serial_number=event["serial_number"])
+                serial_number=event["serialNumber"])
             att_si.no_sync = False
-            att_si.uni_port_id = event["uni_port_id"]
-            att_si.of_dpid = event["of_dpid"]
+            att_si.uni_port_id = long(event["portNumber"])
+            att_si.of_dpid = event["deviceId"]
             self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
             # create an AttWorkflowDriverServiceInstance, the validation will be
             # triggered in the corresponding sync step
             att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
-                serial_number=event["serial_number"],
-                of_dpid=event["of_dpid"],
-                uni_port_id=event["uni_port_id"],
+                serial_number=event["serialNumber"],
+                of_dpid=event["deviceId"],
+                uni_port_id=long(event["portNumber"]),
                 # we assume there is only one AttWorkflowDriverService
                 owner=self.model_accessor.AttWorkflowDriverService.objects.first()
             )

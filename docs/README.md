@@ -106,9 +106,9 @@ Here is the structure of the events and their topics.
 {
   "timestamp": "2018-09-11T01:00:49.506Z",
   "status": "activated", // or disabled
-  "serial_number": "ALPHe3d1cfde", // ONU serial number
-  "uni_port_id": 16, // uni port
-  "of_dpid": "of:000000000a5a0072" // OLT OpenFlow Id
+  "serialNumber": "ALPHe3d1cfde", // ONU serial number
+  "portNumber": "16", // uni port
+  "deviceId": "of:000000000a5a0072" // OLT OpenFlow Id
 }
 ```
 
