@@ -60,9 +60,9 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.event = Mock()
         self.event_dict = {
             'status': 'activated',
-            'serial_number': 'BRCM1234',
-            'of_dpid': 'of:109299321',
-            'uni_port_id': 16
+            'serialNumber': 'BRCM1234',
+            'deviceId': 'of:109299321',
+            'portNumber': '16'
         }
         self.event.value = json.dumps(self.event_dict)
 
@@ -86,15 +86,15 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             self.assertEqual(mock_save.call_count, 1)
 
-            self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
-            self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
-            self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
+            self.assertEqual(att_si.serial_number, self.event_dict['serialNumber'])
+            self.assertEqual(att_si.of_dpid, self.event_dict['deviceId'])
+            self.assertEqual(att_si.uni_port_id, long(self.event_dict['portNumber']))
             self.assertEqual(att_si.onu_state, "ENABLED")
 
     def test_reuse_instance(self):
 
         si = AttWorkflowDriverServiceInstance(
-            serial_number=self.event_dict["serial_number"],
+            serial_number=self.event_dict["serialNumber"],
             of_dpid="foo",
             uni_port_id="foo"
         )
@@ -110,17 +110,17 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             self.assertEqual(mock_save.call_count, 1)
 
-            self.assertEqual(att_si.serial_number, self.event_dict['serial_number'])
-            self.assertEqual(att_si.of_dpid, self.event_dict['of_dpid'])
-            self.assertEqual(att_si.uni_port_id, self.event_dict['uni_port_id'])
+            self.assertEqual(att_si.serial_number, self.event_dict['serialNumber'])
+            self.assertEqual(att_si.of_dpid, self.event_dict['deviceId'])
+            self.assertEqual(att_si.uni_port_id, long(self.event_dict['portNumber']))
             self.assertEqual(att_si.onu_state, "ENABLED")
 
     def test_disable_onu(self):
         self.event_dict = {
             'status': 'disabled',
-            'serial_number': 'BRCM1234',
-            'of_dpid': 'of:109299321',
-            'uni_port_id': 16
+            'serialNumber': 'BRCM1234',
+            'deviceId': 'of:109299321',
+            'portNumber': '16'
         }
         self.event.value = json.dumps(self.event_dict)
 
