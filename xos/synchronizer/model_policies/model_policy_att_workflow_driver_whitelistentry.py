@@ -14,6 +14,7 @@
 # limitations under the License.
 
 
+from helpers import AttHelpers
 from xossynchronizer.model_policies.policy import Policy
 import os
 import sys
@@ -21,7 +22,6 @@ import sys
 sync_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 sys.path.append(sync_path)
 
-from helpers import AttHelpers
 
 class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     model_name = "AttWorkflowDriverWhiteListEntry"
@@ -39,7 +39,10 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
             si.onu_state = "DISABLED"
 
         self.logger.debug(
-            "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist", si=si, onu_state=si.onu_state, authentication_state=si.authentication_state)
+            "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist",
+            si=si,
+            onu_state=si.onu_state,
+            authentication_state=si.authentication_state)
         si.save_changed_fields(always_update_timestamp=True)
 
     def handle_update(self, whitelist):
@@ -55,11 +58,15 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
 
             self.validate_onu_state(si)
 
-        whitelist.backend_need_delete_policy=True
+        whitelist.backend_need_delete_policy = True
         whitelist.save_changed_fields()
 
     def handle_delete(self, whitelist):
-        self.logger.debug("MODEL_POLICY: handle_delete for AttWorkflowDriverWhiteListEntry", serial_number=whitelist.serial_number, pon_port=whitelist.pon_port_id, device=whitelist.device_id)
+        self.logger.debug(
+            "MODEL_POLICY: handle_delete for AttWorkflowDriverWhiteListEntry",
+            serial_number=whitelist.serial_number,
+            pon_port=whitelist.pon_port_id,
+            device=whitelist.device_id)
 
         # BUG: Sometimes the delete policy is not called, because the reaper deletes
 
@@ -71,5 +78,5 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
         for si in sis:
             self.validate_onu_state(si)
 
-        whitelist.backend_need_reap=True
+        whitelist.backend_need_reap = True
         whitelist.save_changed_fields()

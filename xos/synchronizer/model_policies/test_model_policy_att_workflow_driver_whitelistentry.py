@@ -17,9 +17,11 @@
 import unittest
 from mock import patch, call, Mock, PropertyMock
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
     def setUp(self):
@@ -37,7 +39,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
@@ -59,7 +61,6 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
         self.service = AttWorkflowDriverService()
 
-
     def tearDown(self):
         sys.path = self.sys_path_save
         self.service = None
@@ -67,39 +68,44 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
     def test_enable_onu(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
         with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
-            patch.object(si, "save") as save_si:
+                patch.object(si, "save") as save_si:
             validate_onu.return_value = [True, "valid onu"]
 
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'updated'])
+            save_si.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'onu_state', 'serial_number', 'updated'])
 
     def test_disable_onu(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
         with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
-            patch.object(si, "save") as save_si:
+                patch.object(si, "save") as save_si:
             validate_onu.return_value = [False, "invalid onu"]
 
             self.policy.validate_onu_state(si)
 
             save_si.assert_called_once()
-            save_si.assert_called_with(always_update_timestamp=True, update_fields=['onu_state', 'serial_number', 'updated'])
+            save_si.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'onu_state', 'serial_number', 'updated'])
 
     def test_whitelist_update(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
         wle = AttWorkflowDriverWhiteListEntry(serial_number="brcm333", owner_id=self.service.id, owner=self.service)
         with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as oss_si_items, \
-            patch.object(self.policy, "validate_onu_state") as validate_onu_state, \
-            patch.object(wle, "save") as wle_save:
+                patch.object(self.policy, "validate_onu_state") as validate_onu_state, \
+                patch.object(wle, "save") as wle_save:
             oss_si_items.return_value = [si]
-
 
             self.policy.handle_update(wle)
 
             validate_onu_state.assert_called_with(si)
             self.assertTrue(wle.backend_need_delete_policy)
-            wle_save.assert_called_with(always_update_timestamp=False, update_fields=['backend_need_delete_policy', 'owner', 'serial_number'])
+            wle_save.assert_called_with(
+                always_update_timestamp=False, update_fields=[
+                    'backend_need_delete_policy', 'owner', 'serial_number'])
 
     def test_whitelist_delete(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
@@ -113,7 +119,10 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
 
             validate_onu_state.assert_called_with(si)
             self.assertTrue(wle.backend_need_reap)
-            wle_save.assert_called_with(always_update_timestamp=False, update_fields=['backend_need_reap', 'owner', 'serial_number'])
+            wle_save.assert_called_with(
+                always_update_timestamp=False, update_fields=[
+                    'backend_need_reap', 'owner', 'serial_number'])
+
+
 if __name__ == '__main__':
     unittest.main()
-

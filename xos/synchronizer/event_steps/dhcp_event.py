@@ -20,6 +20,7 @@ import sys
 from xossynchronizer.event_steps.eventstep import EventStep
 from helpers import AttHelpers
 
+
 class SubscriberDhcpEventStep(EventStep):
     topics = ["dhcp.events"]
     technology = "kafka"
@@ -34,7 +35,9 @@ class SubscriberDhcpEventStep(EventStep):
         si = AttHelpers.get_si_by_sn(self.model_accessor, self.log, onu_sn)
 
         if not si:
-            self.log.exception("dhcp.events: Cannot find att-workflow-driver service instance for this event", kafka_event=value)
+            self.log.exception(
+                "dhcp.events: Cannot find att-workflow-driver service instance for this event",
+                kafka_event=value)
             raise Exception("dhcp.events: Cannot find att-workflow-driver service instance for this event")
 
         self.log.info("dhcp.events: Got event for subscriber", event_value=value, onu_sn=onu_sn, si=si)
