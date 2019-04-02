@@ -13,12 +13,14 @@
 # limitations under the License.
 
 import unittest
-from mock import patch, call, Mock, PropertyMock
+from mock import patch, Mock
 import json
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 class TestSubscriberAuthEvent(unittest.TestCase):
 
@@ -42,7 +44,7 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
@@ -67,7 +69,6 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         self.hippie_si.serial_number = "BRCM1234"
         self.hippie_si.save = Mock()
 
-
     def tearDown(self):
         sys.path = self.sys_path_save
 
@@ -80,8 +81,8 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         })
 
         with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-            patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as hippie_si_mock, \
-            patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
+                patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as hippie_si_mock, \
+                patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
 
             volt_service_mock.return_value = [self.volt]
             get_onu_sn.return_value = "BRCM1234"
@@ -89,9 +90,12 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
             self.event_step.process_event(self.event)
 
-            self.hippie_si.save.assert_called_with(always_update_timestamp=True, update_fields=['authentication_state', 'serial_number', 'updated'])
+            self.hippie_si.save.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'authentication_state', 'serial_number', 'updated'])
             self.assertEqual(self.hippie_si.authentication_state, 'APPROVED')
 
+
 if __name__ == '__main__':
-    sys.path.append("..") # for import of helpers.py
+    sys.path.append("..")  # for import of helpers.py
     unittest.main()

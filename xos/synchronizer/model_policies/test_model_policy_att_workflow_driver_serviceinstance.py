@@ -15,11 +15,12 @@
 
 
 import unittest
-from mock import patch, call, Mock, PropertyMock
+from mock import patch
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 
 class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
@@ -39,23 +40,20 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
         from model_policy_att_workflow_driver_serviceinstance import AttWorkflowDriverServiceInstancePolicy, AttHelpers
         self.AttHelpers = AttHelpers
 
-        from mock_modelaccessor import MockObjectList
-
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to creation of
-        # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
+        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to
+        # creation of tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
-
 
         self.policy = AttWorkflowDriverServiceInstancePolicy(model_accessor=model_accessor)
         self.si = AttWorkflowDriverServiceInstance()
@@ -72,7 +70,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             admin_state="ENABLED"
         )
         with patch.object(ONUDevice.objects, "get_items") as get_onu, \
-            patch.object(onu, "save") as onu_save:
+                patch.object(onu, "save") as onu_save:
             get_onu.return_value = [onu]
 
             self.policy.update_onu("brcm1234", "ENABLED")
@@ -80,13 +78,13 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
             self.policy.update_onu("brcm1234", "DISABLED")
             self.assertEqual(onu.admin_state, "DISABLED")
-            onu_save.assert_called_with(always_update_timestamp=True, update_fields=['admin_state', 'serial_number', 'updated'])
-
+            onu_save.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'admin_state', 'serial_number', 'updated'])
 
     def test_enable_onu(self):
         with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
-            patch.object(self.policy, "update_onu") as update_onu, \
-            patch.object(self.si, "save") as save_si:
+                patch.object(self.policy, "update_onu") as update_onu:
             validate_onu.return_value = [True, "valid onu"]
 
             self.policy.process_onu_state(self.si)
@@ -98,8 +96,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
     def test_disable_onu(self):
         with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
-                patch.object(self.policy, "update_onu") as update_onu, \
-                patch.object(self.si, "save") as save_si:
+                patch.object(self.policy, "update_onu") as update_onu:
             validate_onu.return_value = [False, "invalid onu"]
 
             self.policy.process_onu_state(self.si)
@@ -115,8 +112,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         when necessary
         """
         with patch.object(self.policy, "process_onu_state") as process_onu_state, \
-            patch.object(self.policy, "update_onu") as update_onu, \
-            patch.object(self.policy, "get_subscriber") as get_subscriber:
+                patch.object(self.policy, "update_onu") as update_onu, \
+                patch.object(self.policy, "get_subscriber") as get_subscriber:
             update_onu.return_value = None
             get_subscriber.return_value = None
 
@@ -131,7 +128,6 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.si.onu_state = "DISABLED"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
-
 
     def test_get_subscriber(self):
 
@@ -243,8 +239,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.si.mac_address = "4321"
 
         with patch.object(sub, "save") as sub_save, \
-            patch.object(RCORDIpAddress.objects, "get_items") as get_ips, \
-            patch.object(ip, "save_changed_fields") as ip_mock:
+                patch.object(RCORDIpAddress.objects, "get_items") as get_ips, \
+                patch.object(ip, "save_changed_fields") as ip_mock:
 
             get_ips.return_value = [ip]
             ip_mock.return_value = []
@@ -267,7 +263,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         self.si.mac_address = "4321"
 
         with patch.object(sub, "save") as sub_save, \
-            patch.object(RCORDIpAddress, "save", autospec=True) as ip_mock:
+                patch.object(RCORDIpAddress, "save", autospec=True) as ip_mock:
 
             ip_mock.return_value = []
 
@@ -288,12 +284,12 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
         )
 
         with patch.object(self.policy, "get_subscriber") as get_subscriber, \
-            patch.object(self.policy, "update_onu") as update_onu, \
-            patch.object(self.policy, "update_subscriber") as update_subscriber:
+                patch.object(self.policy, "update_onu") as update_onu, \
+                patch.object(self.policy, "update_subscriber") as update_subscriber:
 
             get_subscriber.return_value = None
             self.policy.handle_update(self.si)
-            update_onu.assert_called_with(sub.onu_device, "DISABLED");
+            update_onu.assert_called_with(sub.onu_device, "DISABLED")
             self.assertEqual(update_subscriber.call_count, 0)
 
             get_subscriber.return_value = sub
@@ -303,4 +299,3 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

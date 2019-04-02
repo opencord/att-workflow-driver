@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-
+from helpers import AttHelpers
 from xossynchronizer.model_policies.policy import Policy
 
 import os
@@ -23,10 +23,10 @@ import sys
 sync_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 sys.path.append(sync_path)
 
-from helpers import AttHelpers
 
 class DeferredException(Exception):
     pass
+
 
 class AttWorkflowDriverServiceInstancePolicy(Policy):
     model_name = "AttWorkflowDriverServiceInstance"
@@ -36,7 +36,8 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         self.handle_update(si)
 
     def handle_update(self, si):
-        self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s " % (si.id), onu_state=si.onu_state, authentication_state=si.authentication_state)
+        self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s " %
+                          (si.id), onu_state=si.onu_state, authentication_state=si.authentication_state)
 
         # Changing ONU state can change auth state
         # Changing auth state can change DHCP state
@@ -65,7 +66,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             else:
                 si.onu_state = "DISABLED"
                 self.update_onu(si.serial_number, "DISABLED")
-        else: # DISABLED
+        else:  # DISABLED
             if not valid:
                 si.status_message = message
             else:
@@ -118,17 +119,24 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     # ENABLED   | APPROVED | *
     # DISABLED  | AWAITING | AWAITING
     def validate_states(self, si):
-        if (si.onu_state == "AWAITING" or si.onu_state == "DISABLED") and si.authentication_state == "AWAITING" and si.dhcp_state == "AWAITING":
+        if (si.onu_state == "AWAITING" or si.onu_state ==
+                "DISABLED") and si.authentication_state == "AWAITING" and si.dhcp_state == "AWAITING":
             return
         if si.onu_state == "ENABLED" and (si.authentication_state == "APPROVED" or si.dhcp_state == "AWAITING"):
             return
-        self.logger.warning("MODEL_POLICY (validate_states): invalid state combination", onu_state=si.onu_state, auth_state=si.authentication_state, dhcp_state=si.dhcp_state)
-
+        self.logger.warning(
+            "MODEL_POLICY (validate_states): invalid state combination",
+            onu_state=si.onu_state,
+            auth_state=si.authentication_state,
+            dhcp_state=si.dhcp_state)
 
     def update_onu(self, serial_number, admin_state):
-        onu = [onu for onu in self.model_accessor.ONUDevice.objects.all() if onu.serial_number.lower() == serial_number.lower()][0]
+        onu = [onu for onu in self.model_accessor.ONUDevice.objects.all() if onu.serial_number.lower()
+               == serial_number.lower()][0]
         if onu.admin_state == admin_state:
-            self.logger.debug("MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" % (serial_number, admin_state))
+            self.logger.debug(
+                "MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" %
+                (serial_number, admin_state))
         else:
             self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
             onu.admin_state = admin_state
@@ -136,10 +144,13 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def get_subscriber(self, serial_number):
         try:
-            return [s for s in self.model_accessor.RCORDSubscriber.objects.all() if s.onu_device.lower() == serial_number.lower()][0]
+            return [s for s in self.model_accessor.RCORDSubscriber.objects.all() if s.onu_device.lower()
+                    == serial_number.lower()][0]
         except IndexError:
             # If the subscriber doesn't exist we don't do anything
-            self.logger.debug("MODEL_POLICY: subscriber does not exists for this SI, doing nothing", onu_device=serial_number)
+            self.logger.debug(
+                "MODEL_POLICY: subscriber does not exists for this SI, doing nothing",
+                onu_device=serial_number)
             return None
 
     def update_subscriber_ip(self, subscriber, ip):
@@ -150,10 +161,15 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
                 subscriber_id=subscriber.id,
                 ip=ip
             )[0]
-            self.logger.debug("MODEL_POLICY: found existing RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            self.logger.debug("MODEL_POLICY: found existing RCORDIpAddress for subscriber",
+                              onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
             ip.save_changed_fields()
         except IndexError:
-            self.logger.debug("MODEL_POLICY: Creating new RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            self.logger.debug(
+                "MODEL_POLICY: Creating new RCORDIpAddress for subscriber",
+                onu_device=subscriber.onu_device,
+                subscriber_status=subscriber.status,
+                ip=ip)
             ip = self.model_accessor.RCORDIpAddress(
                 subscriber_id=subscriber.id,
                 ip=ip,
@@ -167,9 +183,13 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
                 subscriber_id=subscriber.id,
                 ip=ip
             )[0]
-            self.logger.debug("MODEL_POLICY: delete RCORDIpAddress for subscriber", onu_device=subscriber.onu_device, subscriber_status=subscriber.status, ip=ip)
+            self.logger.debug(
+                "MODEL_POLICY: delete RCORDIpAddress for subscriber",
+                onu_device=subscriber.onu_device,
+                subscriber_status=subscriber.status,
+                ip=ip)
             ip.delete()
-        except:
+        except BaseException:
             self.logger.warning("MODEL_POLICY: no RCORDIpAddress object found, cannot delete", ip=ip)
 
     def update_subscriber(self, subscriber, si):
@@ -187,7 +207,11 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # - the status has changed
         # - we get a DHCPACK event
         if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
-            self.logger.debug("MODEL_POLICY: updating subscriber", onu_device=subscriber.onu_device, authentication_state=si.authentication_state, subscriber_status=subscriber.status)
+            self.logger.debug(
+                "MODEL_POLICY: updating subscriber",
+                onu_device=subscriber.onu_device,
+                authentication_state=si.authentication_state,
+                subscriber_status=subscriber.status)
             if subscriber.status == "awaiting-auth":
                 self.delete_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = ""

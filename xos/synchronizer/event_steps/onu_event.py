@@ -17,6 +17,7 @@
 import json
 from xossynchronizer.event_steps.eventstep import EventStep
 
+
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
     technology = "kafka"
@@ -28,18 +29,21 @@ class ONUEventStep(EventStep):
 
     def get_att_si(self, event):
         try:
-            att_si = self.model_accessor.AttWorkflowDriverServiceInstance.objects.get(serial_number=event["serial_number"])
-            att_si.no_sync = False;
+            att_si = self.model_accessor.AttWorkflowDriverServiceInstance.objects.get(
+                serial_number=event["serial_number"])
+            att_si.no_sync = False
             att_si.uni_port_id = event["uni_port_id"]
             att_si.of_dpid = event["of_dpid"]
             self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
-            # create an AttWorkflowDriverServiceInstance, the validation will be triggered in the corresponding sync step
+            # create an AttWorkflowDriverServiceInstance, the validation will be
+            # triggered in the corresponding sync step
             att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
                 serial_number=event["serial_number"],
                 of_dpid=event["of_dpid"],
                 uni_port_id=event["uni_port_id"],
-                owner=self.model_accessor.AttWorkflowDriverService.objects.first() # we assume there is only one AttWorkflowDriverService
+                # we assume there is only one AttWorkflowDriverService
+                owner=self.model_accessor.AttWorkflowDriverService.objects.first()
             )
             self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
         return att_si

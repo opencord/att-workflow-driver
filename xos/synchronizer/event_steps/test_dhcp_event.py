@@ -13,12 +13,14 @@
 # limitations under the License.
 
 import unittest
-from mock import patch, call, Mock, PropertyMock
+from mock import patch, Mock
 import json
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 class TestSubscriberAuthEvent(unittest.TestCase):
 
@@ -42,7 +44,7 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
@@ -74,23 +76,22 @@ class TestSubscriberAuthEvent(unittest.TestCase):
         self.si.serial_number = "BRCM1234"
         self.si.save = Mock()
 
-
     def tearDown(self):
         sys.path = self.sys_path_save
 
     def test_dhcp_subscriber(self):
 
         self.event.value = json.dumps({
-            "deviceId" : "of:0000000000000001",
-            "portNumber" : "1",
-            "macAddress" : self.mac_address,
-            "ipAddress" : self.ip_address,
+            "deviceId": "of:0000000000000001",
+            "portNumber": "1",
+            "macAddress": self.mac_address,
+            "ipAddress": self.ip_address,
             "messageType": "DHCPREQUEST"
         })
 
         with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-            patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock, \
-            patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
+                patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock, \
+                patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
 
             self.assertTrue(VOLTService.objects.first() is not None)
 
@@ -105,6 +106,7 @@ class TestSubscriberAuthEvent(unittest.TestCase):
             self.assertEqual(self.si.mac_address, self.mac_address)
             self.assertEqual(self.si.ip_address, self.ip_address)
 
+
 if __name__ == '__main__':
-    sys.path.append("..") # for import of helpers.py
+    sys.path.append("..")  # for import of helpers.py
     unittest.main()

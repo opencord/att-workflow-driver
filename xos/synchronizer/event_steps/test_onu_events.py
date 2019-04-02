@@ -13,12 +13,14 @@
 # limitations under the License.
 
 import unittest
-from mock import patch, call, Mock, PropertyMock
+from mock import patch, Mock
 import json
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 class TestSyncOLTDevice(unittest.TestCase):
 
@@ -40,7 +42,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
@@ -69,12 +71,11 @@ class TestSyncOLTDevice(unittest.TestCase):
     def tearDown(self):
         sys.path = self.sys_path_save
 
-
     def test_create_instance(self):
 
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
-            patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
-            patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock, \
+                patch.object(AttWorkflowDriverService.objects, "get_items") as service_mock, \
+                patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
             att_si_mock.return_value = []
             service_mock.return_value = [self.att]
@@ -98,8 +99,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             uni_port_id="foo"
         )
 
-        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock , \
-            patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock, \
+                patch.object(AttWorkflowDriverServiceInstance, "save", autospec=True) as mock_save:
 
             att_si_mock.return_value = [si]
 
@@ -128,7 +129,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.event_step.process_event(self.event)
 
             self.assertEqual(mock_save.call_count, 0)
-            
+
 
 if __name__ == '__main__':
     sys.path.append("..")  # for import of helpers.py
