@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6fc9bec6_59f4ce5a",
+        "filename": "Dockerfile.synchronizer",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-04-02T15:32:59Z",
+      "side": 1,
+      "message": "att-workflow-driver",
+      "range": {
+        "startLine": 24,
+        "startChar": 37,
+        "endLine": 24,
+        "endChar": 41
+      },
+      "revId": "4bf9f4cd0fe935f27069be01fafd4266e7aec128",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
