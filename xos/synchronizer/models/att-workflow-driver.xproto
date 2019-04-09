@@ -14,7 +14,7 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
 
     required string serial_number = 2 [
         help_text = "Serial number of ONU",
-        max_length = 254,
+        max_length = 256,
         tosca_key=True,
         unique = True];
     required string authentication_state = 3 [
@@ -25,7 +25,7 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
         max_length = 50];
     required string of_dpid = 4 [
         help_text = "OLT Openflow ID",
-        max_length = 254];
+        max_length = 256];
     required int32 uni_port_id = 5 [
         help_text = "ONU UNI port ID"];
     required string onu_state = 6 [
@@ -33,13 +33,13 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
         choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))",
         default = "AWAITING",
         feedback_state = True,
-        max_length = 254];
+        max_length = 256];
     optional string status_message = 7 [
         help_text = "Status text of current state machine state",
         default = "",
-        max_length = 254];
+        max_length = 256];
     required string dhcp_state = 8 [
-        max_length = 254,
+        max_length = 256,
         default = "AWAITING",
         choices = "(('AWAITING', 'Awaiting'), ('DHCPDISCOVER', 'DHCPDISCOVER'), ('DHCPACK', 'DHCPACK'), ('DHCPREQUEST', 'DHCPREQUEST'))",
         feedback_state = True];
@@ -64,7 +64,7 @@ message AttWorkflowDriverWhiteListEntry (XOSBase) {
         tosca_key = True];
     required string serial_number = 2 [
         help_text = "ONU Serial Number",
-        max_length = 254,
+        max_length = 256,
         tosca_key = True,
         unique_with = "owner"];
     required int32 pon_port_id = 3 [
