@@ -61,13 +61,9 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
         self.event = Mock()
 
-        self.volt = Mock()
-        self.volt.name = "vOLT"
-        self.volt.leaf_model = Mock()
-
-        self.hippie_si = AttWorkflowDriverServiceInstance()
-        self.hippie_si.serial_number = "BRCM1234"
-        self.hippie_si.save = Mock()
+        self.att_si = AttWorkflowDriverServiceInstance()
+        self.att_si.serial_number = "BRCM1234"
+        self.att_si.save = Mock()
 
     def tearDown(self):
         sys.path = self.sys_path_save
@@ -78,24 +74,22 @@ class TestSubscriberAuthEvent(unittest.TestCase):
             'authenticationState': "APPROVED",
             'deviceId': "of:0000000ce2314000",
             'portNumber': "101",
+            'serialNumber': "BRCM1234",
         })
 
-        with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-                patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as hippie_si_mock, \
-                patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock:
 
-            volt_service_mock.return_value = [self.volt]
-            get_onu_sn.return_value = "BRCM1234"
-            hippie_si_mock.return_value = [self.hippie_si]
+            att_si_mock.return_value = [self.att_si]
 
             self.event_step.process_event(self.event)
 
-            self.hippie_si.save.assert_called_with(
+            self.att_si.save.assert_called()
+            self.att_si.save.assert_called_with(
                 always_update_timestamp=True, update_fields=[
                     'authentication_state', 'serial_number', 'updated'])
-            self.assertEqual(self.hippie_si.authentication_state, 'APPROVED')
+            self.assertEqual(self.att_si.authentication_state, 'APPROVED')
 
 
 if __name__ == '__main__':
-    sys.path.append("..")  # for import of helpers.py
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))  # for import of helpers.py
     unittest.main()
