@@ -58,19 +58,21 @@ class AttHelpers():
         return [True, "ONU has been validated"]
 
     @staticmethod
-    def get_onu_sn(model_accessor, log, event):
-        olt_service = model_accessor.VOLTService.objects.first()
-        onu_sn = olt_service.get_onu_sn_from_openflow(event["deviceId"], event["portNumber"])
-        if not onu_sn or onu_sn is None:
-            log.exception("Cannot find onu serial number for this event", kafka_event=event)
-            raise Exception("Cannot find onu serial number for this event")
-
-        return onu_sn
-
-    @staticmethod
-    def get_si_by_sn(model_accessor, log, serial_number):
+    def find_or_create_att_si(model_accessor, log, event):
         try:
-            return model_accessor.AttWorkflowDriverServiceInstance.objects.get(serial_number=serial_number)
+            att_si = model_accessor.AttWorkflowDriverServiceInstance.objects.get(
+                serial_number=event["serialNumber"]
+            )
+            log.debug("AttHelpers: Found existing AttWorkflowDriverServiceInstance", si=att_si)
         except IndexError:
-            log.exception("Cannot find att-workflow-driver service instance for this serial number", serial_number=serial_number)
-            raise Exception("Cannot find att-workflow-driver service instance for this serial number %s", serial_number)
+            # create an AttWorkflowDriverServiceInstance, the validation will be
+            # triggered in the corresponding sync step
+            att_si = model_accessor.AttWorkflowDriverServiceInstance(
+                serial_number=event["serialNumber"],
+                of_dpid=event["deviceId"],
+                uni_port_id=long(event["portNumber"]),
+                # we assume there is only one AttWorkflowDriverService
+                owner=model_accessor.AttWorkflowDriverService.objects.first()
+            )
+            log.debug("AttHelpers: Created new AttWorkflowDriverServiceInstance", si=att_si)
+        return att_si

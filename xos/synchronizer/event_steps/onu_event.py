@@ -16,6 +16,7 @@
 
 import json
 from xossynchronizer.event_steps.eventstep import EventStep
+from helpers import AttHelpers
 
 
 class ONUEventStep(EventStep):
@@ -27,34 +28,16 @@ class ONUEventStep(EventStep):
     def __init__(self, *args, **kwargs):
         super(ONUEventStep, self).__init__(*args, **kwargs)
 
-    def get_att_si(self, event):
-        try:
-            att_si = self.model_accessor.AttWorkflowDriverServiceInstance.objects.get(
-                serial_number=event["serialNumber"])
-            att_si.no_sync = False
-            att_si.uni_port_id = long(event["portNumber"])
-            att_si.of_dpid = event["deviceId"]
-            self.log.debug("onu.events: Found existing AttWorkflowDriverServiceInstance", si=att_si)
-        except IndexError:
-            # create an AttWorkflowDriverServiceInstance, the validation will be
-            # triggered in the corresponding sync step
-            att_si = self.model_accessor.AttWorkflowDriverServiceInstance(
-                serial_number=event["serialNumber"],
-                of_dpid=event["deviceId"],
-                uni_port_id=long(event["portNumber"]),
-                # we assume there is only one AttWorkflowDriverService
-                owner=self.model_accessor.AttWorkflowDriverService.objects.first()
-            )
-            self.log.debug("onu.events: Created new AttWorkflowDriverServiceInstance", si=att_si)
-        return att_si
-
     def process_event(self, event):
         value = json.loads(event.value)
         self.log.info("onu.events: received event", value=value)
 
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
-            att_si = self.get_att_si(value)
+            att_si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
+            att_si.no_sync = False
+            att_si.uni_port_id = long(value["portNumber"])
+            att_si.of_dpid = value["deviceId"]
             att_si.onu_state = "ENABLED"
             att_si.save_changed_fields(always_update_timestamp=True)
         elif value["status"] == "disabled":

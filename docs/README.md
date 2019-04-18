@@ -119,6 +119,7 @@ Here is the structure of the events and their topics.
   "timestamp": "2018-09-11T00:41:47.483Z",
   "deviceId": "of:000000000a5a0072", // OLT OpenFlow Id
   "portNumber": "16", // uni port
+  "serialNumber": "ALPHe3d1cfde", // ONU serial number
   "authenticationState": "STARTED" // REQUESTED, APPROVED, DENIED
 }
 ```
@@ -131,6 +132,7 @@ Here is the structure of the events and their topics.
   "portNumber" : "16",
   "macAddress" : "90:e2:ba:82:fa:81",
   "ipAddress" : "10.11.1.1"
+  "serialNumber": "ALPHe3d1cfde", // ONU serial number
 }
 ```
 

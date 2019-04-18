@@ -27,20 +27,11 @@ class SubscriberDhcpEventStep(EventStep):
 
     def process_event(self, event):
         value = json.loads(event.value)
+        self.log.info("dhcp.events: Got event for subscriber", event_value=value)
 
-        onu_sn = AttHelpers.get_onu_sn(self.model_accessor, self.log, value)
-        si = AttHelpers.get_si_by_sn(self.model_accessor, self.log, onu_sn)
-
-        if not si:
-            self.log.exception(
-                "dhcp.events: Cannot find att-workflow-driver service instance for this event",
-                kafka_event=value)
-            raise Exception("dhcp.events: Cannot find att-workflow-driver service instance for this event")
-
-        self.log.info("dhcp.events: Got event for subscriber", event_value=value, onu_sn=onu_sn, si=si)
-
+        si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
+        self.log.debug("dhcp.events: Updating service instance", si=si)
         si.dhcp_state = value["messageType"]
         si.ip_address = value["ipAddress"]
         si.mac_address = value["macAddress"]
-
         si.save_changed_fields(always_update_timestamp=True)

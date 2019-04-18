@@ -86,17 +86,12 @@ class TestSubscriberAuthEvent(unittest.TestCase):
             "portNumber": "1",
             "macAddress": self.mac_address,
             "ipAddress": self.ip_address,
-            "messageType": "DHCPREQUEST"
+            "messageType": "DHCPREQUEST",
+            'serialNumber': "BRCM1234",
         })
 
-        with patch.object(VOLTService.objects, "get_items") as volt_service_mock, \
-                patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock, \
-                patch.object(self.volt, "get_onu_sn_from_openflow") as get_onu_sn:
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock:
 
-            self.assertTrue(VOLTService.objects.first() is not None)
-
-            volt_service_mock.return_value = [self.volt]
-            get_onu_sn.return_value = "BRCM1234"
             si_mock.return_value = [self.si]
 
             self.event_step.process_event(self.event)
