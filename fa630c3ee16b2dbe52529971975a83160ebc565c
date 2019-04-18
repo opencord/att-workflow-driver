@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e05599e6_f5d1e74f",
+        "filename": "xos/synchronizer/event_steps/auth_event.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2019-04-18T21:50:11Z",
+      "side": 1,
+      "message": "Looking at only this file, it\u0027s not obvious from the name `get_att_si` that a serviceinstance will be automatically created if none exists. Maybe a comment here and the other call sites of `get_att_si`? or rename the function something like `get_or_create_att_si` ?",
+      "range": {
+        "startLine": 32,
+        "startChar": 8,
+        "endLine": 32,
+        "endChar": 72
+      },
+      "revId": "fa630c3ee16b2dbe52529971975a83160ebc565c",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
