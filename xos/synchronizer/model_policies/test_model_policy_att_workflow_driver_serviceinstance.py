@@ -117,15 +117,18 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             update_onu.return_value = None
             get_subscriber.return_value = None
 
-            self.si.onu_state = "AWAITING"
+            self.si.admin_onu_state = "AWAITING"
+            self.si.oper_onu_status = "AWAITING"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
-            self.si.onu_state = "ENABLED"
+            self.si.admin_onu_state = "ENABLED"
+            self.si.oper_onu_status = "ENABLED"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
-            self.si.onu_state = "DISABLED"
+            self.si.admin_onu_state = "DISABLED"
+            self.si.oper_onu_status = "DISABLED"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
@@ -277,7 +280,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertEqual(saved_ip.description, "DHCP Assigned IP Address")
 
     def test_handle_update_subscriber(self):
-        self.si.onu_state = "DISABLED"
+        self.si.admin_onu_state = "DISABLED"
 
         sub = RCORDSubscriber(
             onu_device="BRCM1234"
@@ -296,6 +299,24 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.policy.handle_update(self.si)
             update_subscriber.assert_called_with(sub, self.si)
 
+    def test_process_auth_state(self):
+        # testing change in admin_onu_state
+        self.si.admin_onu_state = "DISABLED"
+        self.si.oper_onu_status = "ENABLED"
+        self.si.authentication_state, "APPROVED"
+
+        self.policy.process_auth_state(self.si)
+        self.assertEqual(self.si.authentication_state, "AWAITING")
+
+        # testing change in oper_onu_status
+        self.si.admin_onu_state = "ENABLED"
+        self.si.oper_onu_status = "DISABLED"
+        self.si.authentication_state, "APPROVED"
+
+        self.policy.process_auth_state(self.si)
+        self.assertEqual(self.si.authentication_state, "AWAITING")
+
 
 if __name__ == '__main__':
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
     unittest.main()

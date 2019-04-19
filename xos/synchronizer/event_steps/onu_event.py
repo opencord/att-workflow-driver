@@ -32,16 +32,18 @@ class ONUEventStep(EventStep):
         value = json.loads(event.value)
         self.log.info("onu.events: received event", value=value)
 
+        att_si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
         if value["status"] == "activated":
             self.log.info("onu.events: activated onu", value=value)
-            att_si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
             att_si.no_sync = False
             att_si.uni_port_id = long(value["portNumber"])
             att_si.of_dpid = value["deviceId"]
-            att_si.onu_state = "ENABLED"
+            att_si.oper_onu_status = "ENABLED"
             att_si.save_changed_fields(always_update_timestamp=True)
         elif value["status"] == "disabled":
-            self.log.info("onu.events: disabled onu, not taking any action", value=value)
+            self.log.info("onu.events: disabled onu, resetting the subscriber", value=value)
+            att_si.oper_onu_status = "DISABLED"
+            att_si.save_changed_fields(always_update_timestamp=True)
             return
         else:
             self.log.warn("onu.events: Unknown status value: %s" % value["status"], value=value)
