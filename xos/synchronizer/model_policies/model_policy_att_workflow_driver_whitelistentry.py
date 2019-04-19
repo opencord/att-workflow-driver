@@ -34,14 +34,14 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def validate_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(self.model_accessor, self.logger, si)
         if valid:
-            si.onu_state = "ENABLED"
+            si.admin_onu_state = "ENABLED"
         else:
-            si.onu_state = "DISABLED"
+            si.admin_onu_state = "DISABLED"
 
         self.logger.debug(
             "MODEL_POLICY: activating AttWorkflowDriverServiceInstance because of change in the whitelist",
             si=si,
-            onu_state=si.onu_state,
+            onu_state=si.admin_onu_state,
             authentication_state=si.authentication_state)
         si.save_changed_fields(always_update_timestamp=True)
 
