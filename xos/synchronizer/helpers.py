@@ -40,9 +40,13 @@ class AttHelpers():
 
         whitelisted = matching_entries[0]
         try:
-            pon_port = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number).pon_port
+            onu = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number)
+            pon_port = onu.pon_port
         except IndexError:
             raise DeferredException("ONU device %s is not know to XOS yet" % att_si.serial_number)
+
+        if onu.admin_state == "DISABLED":
+            return [False, "ONU has been manually disabled"]
 
         if pon_port.port_no != whitelisted.pon_port_id or att_si.of_dpid != whitelisted.device_id:
             log.warn("ONU disable as location don't match",
