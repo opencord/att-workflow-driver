@@ -89,7 +89,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.serial_number, self.event_dict['serialNumber'])
             self.assertEqual(att_si.of_dpid, self.event_dict['deviceId'])
             self.assertEqual(att_si.uni_port_id, long(self.event_dict['portNumber']))
-            self.assertEqual(att_si.onu_state, "ENABLED")
+            self.assertEqual(att_si.admin_onu_state, "ENABLED")
 
     def test_reuse_instance(self):
 
@@ -113,7 +113,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.serial_number, self.event_dict['serialNumber'])
             self.assertEqual(att_si.of_dpid, self.event_dict['deviceId'])
             self.assertEqual(att_si.uni_port_id, long(self.event_dict['portNumber']))
-            self.assertEqual(att_si.onu_state, "ENABLED")
+            self.assertEqual(att_si.admin_onu_state, "ENABLED")
 
     def test_disable_onu(self):
         self.event_dict = {
@@ -132,5 +132,5 @@ class TestSyncOLTDevice(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    sys.path.append("..")  # for import of helpers.py
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))  # for import of helpers.py
     unittest.main()

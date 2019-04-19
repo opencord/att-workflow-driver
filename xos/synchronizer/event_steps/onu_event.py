@@ -38,10 +38,11 @@ class ONUEventStep(EventStep):
             att_si.no_sync = False
             att_si.uni_port_id = long(value["portNumber"])
             att_si.of_dpid = value["deviceId"]
-            att_si.onu_state = "ENABLED"
+            att_si.admin_onu_state = "ENABLED"
             att_si.save_changed_fields(always_update_timestamp=True)
         elif value["status"] == "disabled":
             self.log.info("onu.events: disabled onu, not taking any action", value=value)
+
             return
         else:
             self.log.warn("onu.events: Unknown status value: %s" % value["status"], value=value)
