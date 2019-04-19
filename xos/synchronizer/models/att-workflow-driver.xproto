@@ -28,7 +28,7 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
         max_length = 256];
     required int32 uni_port_id = 5 [
         help_text = "ONU UNI port ID"];
-    required string onu_state = 6 [
+    required string admin_onu_state = 6 [
         help_text = "ONU administrative state",
         choices = "(('AWAITING', 'Awaiting'), ('ENABLED', 'Enabled'), ('DISABLED', 'Disabled'))",
         default = "AWAITING",
