@@ -117,15 +117,15 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             update_onu.return_value = None
             get_subscriber.return_value = None
 
-            self.si.onu_state = "AWAITING"
+            self.si.admin_onu_state = "AWAITING"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
-            self.si.onu_state = "ENABLED"
+            self.si.admin_onu_state = "ENABLED"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
-            self.si.onu_state = "DISABLED"
+            self.si.admin_onu_state = "DISABLED"
             self.policy.handle_update(self.si)
             process_onu_state.assert_called_with(self.si)
 
@@ -277,7 +277,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.assertEqual(saved_ip.description, "DHCP Assigned IP Address")
 
     def test_handle_update_subscriber(self):
-        self.si.onu_state = "DISABLED"
+        self.si.admin_onu_state = "DISABLED"
 
         sub = RCORDSubscriber(
             onu_device="BRCM1234"
@@ -298,4 +298,5 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
     unittest.main()
