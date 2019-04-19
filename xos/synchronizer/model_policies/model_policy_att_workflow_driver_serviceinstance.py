@@ -37,7 +37,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def handle_update(self, si):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverServiceInstance %s " %
-                          (si.id), onu_state=si.onu_state, authentication_state=si.authentication_state)
+                          (si.id), onu_state=si.admin_onu_state, authentication_state=si.authentication_state)
 
         # Changing ONU state can change auth state
         # Changing auth state can change DHCP state
@@ -58,13 +58,13 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
 
     def process_onu_state(self, si):
         [valid, message] = AttHelpers.validate_onu(self.model_accessor, self.logger, si)
-        if si.onu_state == "AWAITING" or si.onu_state == "ENABLED":
+        if si.admin_onu_state == "AWAITING" or si.admin_onu_state == "ENABLED":
             si.status_message = message
             if valid:
-                si.onu_state = "ENABLED"
+                si.admin_onu_state = "ENABLED"
                 self.update_onu(si.serial_number, "ENABLED")
             else:
-                si.onu_state = "DISABLED"
+                si.admin_onu_state = "DISABLED"
                 self.update_onu(si.serial_number, "DISABLED")
         else:  # DISABLED
             if not valid:
@@ -87,7 +87,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             "APPROVED": " - Authentication succeeded",
             "DENIED": " - Authentication denied"
         }
-        if si.onu_state == "DISABLED":
+        if si.admin_onu_state == "DISABLED" or si.oper_onu_status == "DISABLED":
             si.authentication_state = "AWAITING"
         else:
             si.status_message += auth_msgs[si.authentication_state]
@@ -119,14 +119,14 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     # ENABLED   | APPROVED | *
     # DISABLED  | AWAITING | AWAITING
     def validate_states(self, si):
-        if (si.onu_state == "AWAITING" or si.onu_state ==
+        if (si.admin_onu_state == "AWAITING" or si.admin_onu_state ==
                 "DISABLED") and si.authentication_state == "AWAITING" and si.dhcp_state == "AWAITING":
             return
-        if si.onu_state == "ENABLED" and (si.authentication_state == "APPROVED" or si.dhcp_state == "AWAITING"):
+        if si.admin_onu_state == "ENABLED" and (si.authentication_state == "APPROVED" or si.dhcp_state == "AWAITING"):
             return
         self.logger.warning(
             "MODEL_POLICY (validate_states): invalid state combination",
-            onu_state=si.onu_state,
+            onu_state=si.admin_onu_state,
             auth_state=si.authentication_state,
             dhcp_state=si.dhcp_state)
 
