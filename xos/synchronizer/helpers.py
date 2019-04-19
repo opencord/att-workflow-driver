@@ -40,7 +40,8 @@ class AttHelpers():
 
         whitelisted = matching_entries[0]
         try:
-            pon_port = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number).pon_port
+            onu = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number)
+            pon_port = onu.pon_port
         except IndexError:
             raise DeferredException("ONU device %s is not know to XOS yet" % att_si.serial_number)
 
