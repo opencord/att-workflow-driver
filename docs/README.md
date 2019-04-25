@@ -131,7 +131,7 @@ Here is the structure of the events and their topics.
   "deviceId" : "of:000000000a5a0072",
   "portNumber" : "16",
   "macAddress" : "90:e2:ba:82:fa:81",
-  "ipAddress" : "10.11.1.1"
+  "ipAddress" : "10.11.1.1",
   "serialNumber": "ALPHe3d1cfde", // ONU serial number
 }
 ```

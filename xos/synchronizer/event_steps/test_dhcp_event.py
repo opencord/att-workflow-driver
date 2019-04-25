@@ -103,5 +103,4 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    sys.path.append("..")  # for import of helpers.py
     unittest.main()

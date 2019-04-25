@@ -91,5 +91,4 @@ class TestSubscriberAuthEvent(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))  # for import of helpers.py
     unittest.main()
