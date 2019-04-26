@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d431700_12b0df21",
+        "filename": "xos/synchronizer/event_steps/onu_event.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-04-26T00:16:29Z",
+      "side": 1,
+      "message": "Does this mean that receiving an \"activated\" event can change the desired state of the device (as set by an admin?)",
+      "range": {
+        "startLine": 41,
+        "startChar": 19,
+        "endLine": 41,
+        "endChar": 34
+      },
+      "revId": "58ece903466385139f63398bca7e03d0a5a1863e",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5433f213_f35d18dc",
+        "filename": "xos/synchronizer/event_steps/onu_event.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-04-26T00:16:29Z",
+      "side": 1,
+      "message": "Can we let the model policy take care of this?  One way we\u0027ve run into race conditions in the past is having multiple events change the same fields.",
+      "range": {
+        "startLine": 47,
+        "startChar": 12,
+        "endLine": 47,
+        "endChar": 52
+      },
+      "revId": "58ece903466385139f63398bca7e03d0a5a1863e",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e335acd_48eabd09",
+        "filename": "xos/synchronizer/models/att-workflow-driver.xproto",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-04-26T00:16:29Z",
+      "side": 1,
+      "message": "Should be false now?",
+      "range": {
+        "startLine": 35,
+        "startChar": 8,
+        "endLine": 35,
+        "endChar": 30
+      },
+      "revId": "58ece903466385139f63398bca7e03d0a5a1863e",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
