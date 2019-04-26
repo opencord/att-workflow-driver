@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5bfc9219_29bf50b2",
+        "filename": "xos/synchronizer/event_steps/onu_event.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-04-26T00:57:16Z",
+      "side": 1,
+      "message": "OK this field is the \"desired\" state of the workflow, not the operator.  If the operator wants to disable an ONU it should be removed from the whitelist.",
+      "parentUuid": "6d431700_12b0df21",
+      "range": {
+        "startLine": 41,
+        "startChar": 19,
+        "endLine": 41,
+        "endChar": 34
+      },
+      "revId": "58ece903466385139f63398bca7e03d0a5a1863e",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5433f213_f35d18dc",
         "filename": "xos/synchronizer/event_steps/onu_event.py",
         "patchSetId": 4
@@ -59,6 +83,30 @@
       "writtenOn": "2019-04-26T00:16:29Z",
       "side": 1,
       "message": "Should be false now?",
+      "range": {
+        "startLine": 35,
+        "startChar": 8,
+        "endLine": 35,
+        "endChar": 30
+      },
+      "revId": "58ece903466385139f63398bca7e03d0a5a1863e",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "59bacf52_4fa74230",
+        "filename": "xos/synchronizer/models/att-workflow-driver.xproto",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-04-26T00:57:16Z",
+      "side": 1,
+      "message": "I guess it\u0027s still technically feedback state, but driven by the workflow (i.e., not set directly by an operator).",
+      "parentUuid": "6e335acd_48eabd09",
       "range": {
         "startLine": 35,
         "startChar": 8,
