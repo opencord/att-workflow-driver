@@ -1,4 +1,3 @@
-
 # Copyright 2017-present Open Networking Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 
 from helpers import AttHelpers
 from xossynchronizer.model_policies.policy import Policy
@@ -48,14 +46,10 @@ class AttWorkflowDriverWhiteListEntryPolicy(Policy):
     def handle_update(self, whitelist):
         self.logger.debug("MODEL_POLICY: handle_update for AttWorkflowDriverWhiteListEntry", whitelist=whitelist)
 
-        sis = self.model_accessor.AttWorkflowDriverServiceInstance.objects.all()
+        sis = self.model_accessor.AttWorkflowDriverServiceInstance.objects.filter(
+                serial_number__iexact=whitelist.serial_number)
 
         for si in sis:
-
-            if si.serial_number.lower() != whitelist.serial_number.lower():
-                # NOTE we don't care about this SI as it has a different serial number
-                continue
-
             self.validate_onu_state(si)
 
         whitelist.backend_need_delete_policy = True
