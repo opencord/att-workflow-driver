@@ -127,6 +127,11 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
     def update_onu(self, serial_number, admin_state):
         onu = [onu for onu in self.model_accessor.ONUDevice.objects.all() if onu.serial_number.lower()
                == serial_number.lower()][0]
+        if onu.admin_state == "ADMIN_DISABLED":
+            self.logger.debug(
+                "MODEL_POLICY: ONUDevice [%s] has been manually disabled, not changing state to %s" %
+                (serial_number, admin_state))
+            return
         if onu.admin_state == admin_state:
             self.logger.debug(
                 "MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" %
