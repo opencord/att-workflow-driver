@@ -11,6 +11,7 @@ message AttWorkflowDriverServiceInstance (ServiceInstance){
     option owner_class_name = "AttWorkflowDriverService";
     option verbose_name = "AttWorkflowDriver Service Instance";
     option description = "Workflow settings for a particular ONU Device";
+    option policy_implemented = "True";
 
     required string serial_number = 2 [
         help_text = "Serial number of ONU",
@@ -63,6 +64,7 @@ message AttWorkflowDriverWhiteListEntry (XOSBase) {
     option verbose_name = "ONU Whitelist";
     option plural = "attworkflowdriverwhitelistentries";
     option description = "White list entry that permits an ONU with a particular serial number on a particular OLT and PON";
+    option policy_implemented = "True";
 
     required manytoone owner->AttWorkflowDriverService:whitelist_entries = 1:1001 [
         help_text = "AttWorkflowDriverService that owns this white list entry",
