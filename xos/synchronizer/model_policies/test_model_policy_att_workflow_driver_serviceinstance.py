@@ -225,7 +225,7 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             self.policy.update_subscriber(sub, self.si)
             sub_save.assert_not_called()
 
-    def test_update_subscriber_dhcp_with_exiting_ip(self):
+    def test_update_subscriber_dhcp_with_existing_ip(self):
         sub = RCORDSubscriber(
             id=10,
             onu_device="BRCM1234"
@@ -249,7 +249,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             ip_mock.return_value = []
 
             self.policy.update_subscriber(sub, self.si)
-            sub_save.assert_called()
+            sub_save.assert_called_with(always_update_timestamp=False,
+                update_fields=['id', 'mac_address', 'onu_device', 'status'])
             self.assertEqual(sub.mac_address, self.si.mac_address)
 
             ip_mock.assert_called_with()
@@ -271,7 +272,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             ip_mock.return_value = []
 
             self.policy.update_subscriber(sub, self.si)
-            sub_save.assert_called()
+            sub_save.assert_called_with(always_update_timestamp=False,
+                update_fields=['id', 'mac_address', 'onu_device', 'status'])
             self.assertEqual(sub.mac_address, self.si.mac_address)
 
             saved_ip = ip_mock.call_args[0][0]
