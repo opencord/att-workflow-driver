@@ -217,7 +217,10 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             elif si.ip_address and si.mac_address:
                 self.update_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = si.mac_address
-            subscriber.save_changed_fields(always_update_timestamp=True)
+
+            # SEBA-744 Only trigger subscriber model policy for important changes
+            important_change = (cur_status != subscriber.status)
+            subscriber.save_changed_fields(always_update_timestamp=important_change)
         else:
             self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
                               authentication_state=si.authentication_state, subscriber_status=subscriber.status)
