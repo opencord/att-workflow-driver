@@ -249,7 +249,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             ip_mock.return_value = []
 
             self.policy.update_subscriber(sub, self.si)
-            sub_save.assert_called()
+            sub_save.assert_called_with(always_update_timestamp=False,
+                update_fields=['id', 'mac_address', 'onu_device', 'status'])
             self.assertEqual(sub.mac_address, self.si.mac_address)
 
             ip_mock.assert_called_with()
@@ -271,7 +272,8 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
             ip_mock.return_value = []
 
             self.policy.update_subscriber(sub, self.si)
-            sub_save.assert_called()
+            sub_save.assert_called_with(always_update_timestamp=False,
+                                        update_fields=['id', 'mac_address', 'onu_device', 'status'])
             self.assertEqual(sub.mac_address, self.si.mac_address)
 
             saved_ip = ip_mock.call_args[0][0]

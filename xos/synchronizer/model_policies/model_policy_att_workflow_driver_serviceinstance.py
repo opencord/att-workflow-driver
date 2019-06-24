@@ -206,18 +206,22 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
         # - the status has changed
         # - we get a DHCPACK event
         if cur_status != subscriber.status or si.dhcp_state == "DHCPACK":
-            self.logger.debug(
-                "MODEL_POLICY: updating subscriber",
-                onu_device=subscriber.onu_device,
-                authentication_state=si.authentication_state,
-                subscriber_status=subscriber.status)
             if subscriber.status == "awaiting-auth":
                 self.delete_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = ""
             elif si.ip_address and si.mac_address:
                 self.update_subscriber_ip(subscriber, si.ip_address)
                 subscriber.mac_address = si.mac_address
-            subscriber.save_changed_fields(always_update_timestamp=True)
+
+            # NOTE SEBA-744 if the update is a DHCP assignment we don't want to trigger model_policies and sync_steps
+            important_change = (cur_status != subscriber.status)
+            self.logger.debug(
+                "MODEL_POLICY: updating subscriber",
+                onu_device=subscriber.onu_device,
+                authentication_state=si.authentication_state,
+                subscriber_status=subscriber.status,
+                always_update_timestamp=important_change)
+            subscriber.save_changed_fields(always_update_timestamp=important_change)
         else:
             self.logger.debug("MODEL_POLICY: subscriber status has not changed", onu_device=subscriber.onu_device,
                               authentication_state=si.authentication_state, subscriber_status=subscriber.status)
