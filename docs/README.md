@@ -12,13 +12,14 @@ This service is composed of the following models:
 - `AttWorkflowDriverServiceInstance`. This model holds various state associated with the state machine for validating a subscriber's ONU.
     - `serial_number`. Serial number of ONU.
     - `authentication_state`. [`AWAITING` | `STARTED` | `REQUESTED` | `APPROVED` | `DENIED`]. Current authentication state.
-    - `of_dpid`.
-    - `uni_port_id`.
+    - `of_dpid`. OLT Openflow ID.
+    - `uni_port_id`. ONU UNI Port ID.
     - `onu_state`. [`AWAITING` | `ENABLED` | `DISABLED`]. State of the ONU.
-    - `status_message`.
+    - `status_message`. Status text of current state machine state.
     - `dhcp_state`. [`AWAITING` | `DHCPDISCOVER` | `DHCPACK` | `DHCPREQUEST`]. Current DHCP state.
     - `ip_address`. Subscriber ip address.
     - `mac_address`. Subscriber mac address.
+    - `oper_onu_status`. [`AWAITING` | `ENABLED` | `DISABLED`]. ONU operational state.
 - `AttWorkflowDriverWhiteListEntry`. This model holds a whitelist authorizing an ONU with a specific serial number to be connected to a specific PON Port on a specific OLT.
     - `owner`. Relation to the AttWorkflowDriverService that owns this whitelist entry.
     - `serial_number`. Serial number of ONU.
