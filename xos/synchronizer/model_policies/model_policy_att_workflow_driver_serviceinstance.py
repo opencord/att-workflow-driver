@@ -78,7 +78,7 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             "AWAITING": " - Awaiting Authentication",
             "REQUESTED": " - Authentication requested",
             "STARTED": " - Authentication started",
-            "APPROVED": " - Authentication succeeded",
+            "APPROVED": " - Hi ONF Connect!!",
             "DENIED": " - Authentication denied"
         }
         if si.admin_onu_state == "DISABLED" or si.oper_onu_status == "DISABLED":
