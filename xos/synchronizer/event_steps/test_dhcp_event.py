@@ -101,6 +101,50 @@ class TestSubscriberAuthEvent(unittest.TestCase):
             self.assertEqual(self.si.mac_address, self.mac_address)
             self.assertEqual(self.si.ip_address, self.ip_address)
 
+    def test_dhcp_subscriber_new_serial_number(self):
+
+        self.event.value = json.dumps({
+            "deviceId": "of:0000000000000001",
+            "portNumber": "1",
+            "macAddress": self.mac_address,
+            "ipAddress": self.ip_address,
+            "messageType": "DHCPREQUEST",
+            'serialNumber': "BRCM1234-1",
+        })
+
+        self.si.serial_number = "BRCM1234-1"
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock:
+
+            si_mock.return_value = [self.si]
+
+            self.event_step.process_event(self.event)
+
+            self.si.save.assert_called()
+            self.assertEqual(self.si.dhcp_state, "DHCPREQUEST")
+            self.assertEqual(self.si.mac_address, self.mac_address)
+            self.assertEqual(self.si.ip_address, self.ip_address)
+
+    def test_dhcp_subscriber_unsupported_serial_number(self):
+        # NOTE: events are pushed with serialNumber equal to [onu_serial_number]-[port_number].
+        #  Currently we support a single UNI per ONU, that is the first one (i.e., BRCM1234-1).
+        self.event.value = json.dumps({
+            "deviceId": "of:0000000000000001",
+            "portNumber": "1",
+            "macAddress": self.mac_address,
+            "ipAddress": self.ip_address,
+            "messageType": "DHCPREQUEST",
+            'serialNumber': "BRCM1234-3",
+        })
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as si_mock:
+
+            si_mock.return_value = [self.si]
+
+            self.event_step.process_event(self.event)
+
+            self.si.save.assert_not_called()
+            self.assertEqual(self.si.dhcp_state, "AWAITING")
 
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))  # for import of helpers.py

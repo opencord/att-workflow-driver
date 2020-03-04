@@ -28,7 +28,10 @@ class SubscriberAuthEventStep(EventStep):
     def process_event(self, event):
         value = json.loads(event.value)
         self.log.info("authentication.events: Got event for subscriber", event_value=value)
-        
+
+        if not AttHelpers.check_serial_number_event(value["serialNumber"], self.log):
+            return
+
         si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
         self.log.debug("authentication.events: Updating service instance", si=si)
         si.authentication_state = value["authenticationState"]

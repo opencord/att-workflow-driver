@@ -125,19 +125,19 @@ class AttWorkflowDriverServiceInstancePolicy(Policy):
             dhcp_state=si.dhcp_state)
 
     def update_onu(self, serial_number, admin_state):
-        onu = [onu for onu in self.model_accessor.ONUDevice.objects.all() if onu.serial_number.lower()
-               == serial_number.lower()][0]
+        onu = [onu for onu in self.model_accessor.ONUDevice.objects.all()
+               if onu.serial_number.lower() == serial_number.lower().split('-')[0]][0]
         if onu.admin_state == "ADMIN_DISABLED":
             self.logger.debug(
                 "MODEL_POLICY: ONUDevice [%s] has been manually disabled, not changing state to %s" %
-                (serial_number, admin_state))
+                (onu.serial_number, admin_state))
             return
         if onu.admin_state == admin_state:
             self.logger.debug(
                 "MODEL_POLICY: ONUDevice [%s] already has admin_state to %s" %
-                (serial_number, admin_state))
+                (onu.serial_number, admin_state))
         else:
-            self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (serial_number, admin_state))
+            self.logger.debug("MODEL_POLICY: setting ONUDevice [%s] admin_state to %s" % (onu.serial_number, admin_state))
             onu.admin_state = admin_state
             onu.save_changed_fields(always_update_timestamp=True)
 

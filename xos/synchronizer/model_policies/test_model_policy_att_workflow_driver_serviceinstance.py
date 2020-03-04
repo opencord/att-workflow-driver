@@ -82,6 +82,24 @@ class TestModelPolicyAttWorkflowDriverServiceInstance(unittest.TestCase):
                 always_update_timestamp=True, update_fields=[
                     'admin_state', 'serial_number', 'updated'])
 
+    def test_update_onu_new_serial_number(self):
+        onu = ONUDevice(
+            serial_number="BRCM1234",
+            admin_state="ENABLED"
+        )
+        with patch.object(ONUDevice.objects, "get_items") as get_onu, \
+                patch.object(onu, "save") as onu_save:
+            get_onu.return_value = [onu]
+
+            self.policy.update_onu("brcm1234-1", "ENABLED")
+            onu_save.assert_not_called()
+
+            self.policy.update_onu("brcm1234-1", "DISABLED")
+            self.assertEqual(onu.admin_state, "DISABLED")
+            onu_save.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'admin_state', 'serial_number', 'updated'])
+
     def test_enable_onu(self):
         with patch.object(self.AttHelpers, "validate_onu") as validate_onu, \
                 patch.object(self.policy, "update_onu") as update_onu:
