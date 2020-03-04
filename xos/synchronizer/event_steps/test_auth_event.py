@@ -89,6 +89,47 @@ class TestSubscriberAuthEvent(unittest.TestCase):
                     'authentication_state', 'serial_number', 'updated'])
             self.assertEqual(self.att_si.authentication_state, 'APPROVED')
 
+    def test_authenticate_subscriber_new_serial_number(self):
+
+        self.event.value = json.dumps({
+            'authenticationState': "APPROVED",
+            'deviceId': "of:0000000ce2314000",
+            'portNumber': "101",
+            'serialNumber': "BRCM1234-1",
+        })
+
+        self.att_si.serial_number = "BRCM1234-1"
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock:
+
+            att_si_mock.return_value = [self.att_si]
+
+            self.event_step.process_event(self.event)
+
+            self.att_si.save.assert_called()
+            self.att_si.save.assert_called_with(
+                always_update_timestamp=True, update_fields=[
+                    'authentication_state', 'serial_number', 'updated'])
+            self.assertEqual(self.att_si.authentication_state, 'APPROVED')
+
+    def test_authenticate_subscriber_unsupported_serial_number(self):
+
+        self.event.value = json.dumps({
+            'authenticationState': "APPROVED",
+            'deviceId': "of:0000000ce2314000",
+            'portNumber': "101",
+            'serialNumber': "BRCM1234-3",
+        })
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock:
+
+            att_si_mock.return_value = [self.att_si]
+
+            self.event_step.process_event(self.event)
+
+            self.att_si.save.assert_not_called()
+            self.assertEqual(self.att_si.authentication_state, 'AWAITING')
+
 
 if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))  # for import of helpers.py

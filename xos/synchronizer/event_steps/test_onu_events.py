@@ -183,6 +183,54 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(att_si.admin_onu_state, 'DISABLED')
             self.assertEqual(att_si.oper_onu_status, 'ENABLED')
 
+    def test_enable_onu_new_serial_number(self):
+        self.event_dict = {
+            'status': 'activated',
+            'serialNumber': 'BRCM1234-1',
+            'deviceId': 'of:109299321',
+            'portNumber': '16',
+        }
+
+        si = AttWorkflowDriverServiceInstance(
+            serial_number=self.event_dict["serialNumber"],
+            of_dpid="foo",
+            uni_port_id="foo",
+            admin_onu_state="DISABLED",
+            oper_onu_status="DISABLED",
+        )
+
+        self.event.value = json.dumps(self.event_dict)
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock, \
+                patch.object(AttWorkflowDriverServiceInstance, "save_changed_fields", autospec=True) as mock_save:
+            att_si_mock.return_value = [si]
+
+            self.event_step.process_event(self.event)
+
+            att_si = mock_save.call_args[0][0]
+
+            self.assertEqual(mock_save.call_count, 1)
+
+            # Receiving an ONU event doesn't change the admin_onu_state until the model policy runs
+            self.assertEqual(att_si.admin_onu_state, 'DISABLED')
+            self.assertEqual(att_si.oper_onu_status, 'ENABLED')
+
+    def test_unsupported_onu_new_serial_number(self):
+        self.event_dict = {
+            'status': 'activated',
+            'serialNumber': 'BRCM1234-3',
+            'deviceId': 'of:109299321',
+            'portNumber': '16',
+        }
+
+        self.event.value = json.dumps(self.event_dict)
+
+        with patch.object(AttWorkflowDriverServiceInstance.objects, "get_items") as att_si_mock, \
+                patch.object(AttWorkflowDriverServiceInstance, "save_changed_fields", autospec=True) as mock_save:
+
+            self.event_step.process_event(self.event)
+
+            self.assertEqual(mock_save.call_count, 0)
 
 
 if __name__ == '__main__':

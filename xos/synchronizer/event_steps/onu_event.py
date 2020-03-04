@@ -31,6 +31,8 @@ class ONUEventStep(EventStep):
     def process_event(self, event):
         value = json.loads(event.value)
         self.log.info("onu.events: received event", value=value)
+        if not AttHelpers.check_serial_number_event(value["serialNumber"], self.log):
+            return
 
         att_si = AttHelpers.find_or_create_att_si(self.model_accessor, self.log, value)
         if value["status"] == "activated":
