@@ -147,6 +147,19 @@ class TestAttHelpers(unittest.TestCase):
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")
 
+    def test_validating_onu_new_serial_number(self):
+        self.whitelist_entry.serial_number = "BRCM1234-1"
+        self.att_si.serial_number = "BRCM1234-1"
+        with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_mock, \
+                patch.object(ONUDevice.objects, "get_items") as onu_mock:
+            whitelist_mock.return_value = [self.whitelist_entry]
+            onu_mock.return_value = [self.onu]
+
+            [res, message] = self.helpers.validate_onu(self.model_accessor, self.log, self.att_si)
+
+            self.assertTrue(res)
+            self.assertEqual(message, "ONU has been validated")
+
     def test_validating_onu_lowercase(self):
         self.whitelist_entry.serial_number = "brcm1234"
         with patch.object(AttWorkflowDriverWhiteListEntry.objects, "get_items") as whitelist_mock, \
@@ -158,6 +171,13 @@ class TestAttHelpers(unittest.TestCase):
 
             self.assertTrue(res)
             self.assertEqual(message, "ONU has been validated")
+
+    def test_check_serial_number_event_correct(self):
+        self.assertTrue(self.helpers.check_serial_number_event("BRCM1234", self.log))
+        self.assertTrue(self.helpers.check_serial_number_event("BRCM1234-1", self.log))
+
+    def test_check_serial_number_event_wrong(self):
+        self.assertFalse(self.helpers.check_serial_number_event("BRCM1234-2", self.log))
 
 if __name__ == '__main__':
     unittest.main()

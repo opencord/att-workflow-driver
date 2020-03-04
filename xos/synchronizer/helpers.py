@@ -15,6 +15,18 @@
 from xossynchronizer.steps.syncstep import DeferredException
 
 class AttHelpers():
+
+    @staticmethod
+    def check_serial_number_event(serial_number, log):
+        # This is needed to be compatible with both Voltha 1.7 and Voltha 2.x
+        # It supposes to have only 1 subscriber per ONU and the subscriber is
+        # connected to the first port.
+        # FIXME: supporting a single ONU per UNI
+        if "-" in serial_number and not serial_number.endswith("-1"):
+            log.info("Skip event, only consider [serialNumber]-1 events")
+            return False
+        return True
+
     @staticmethod
     def validate_onu(model_accessor, log, att_si):
         """
@@ -40,7 +52,7 @@ class AttHelpers():
 
         whitelisted = matching_entries[0]
         try:
-            onu = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number)
+            onu = model_accessor.ONUDevice.objects.get(serial_number=att_si.serial_number.split("-")[0])
             pon_port = onu.pon_port
         except IndexError:
             raise DeferredException("ONU device %s is not know to XOS yet" % att_si.serial_number)
@@ -65,6 +77,7 @@ class AttHelpers():
     def find_or_create_att_si(model_accessor, log, event):
         try:
             att_si = model_accessor.AttWorkflowDriverServiceInstance.objects.get(
+                # FIXME: in this way we support a single UNI port per ONU
                 serial_number=event["serialNumber"]
             )
             log.debug("AttHelpers: Found existing AttWorkflowDriverServiceInstance", si=att_si)
