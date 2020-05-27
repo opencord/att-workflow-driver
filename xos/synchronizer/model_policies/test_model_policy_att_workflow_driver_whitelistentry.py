@@ -76,7 +76,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             save_si.assert_called_once()
             save_si.assert_called_with(
                 always_update_timestamp=True, update_fields=[
-                    'admin_onu_state', 'serial_number', 'updated'])
+                    'admin_onu_state', 'serial_number', 'status_message', 'updated'])
 
     def test_disable_onu(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id, valid="invalid")
@@ -89,7 +89,7 @@ class TestModelPolicyAttWorkflowDriverWhiteListEntry(unittest.TestCase):
             save_si.assert_called_once()
             save_si.assert_called_with(
                 always_update_timestamp=True, update_fields=[
-                    'admin_onu_state', 'serial_number', 'updated'])
+                    'admin_onu_state', 'serial_number', 'status_message', 'updated'])
 
     def test_whitelist_update(self):
         si = AttWorkflowDriverServiceInstance(serial_number="BRCM333", owner_id=self.service.id)
